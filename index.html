@@ -623,13 +623,19 @@ async function ensurePdfJs(){
 function parseAuchanInvoiceText(text){
  const lines=String(text||'').split(/\n/).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean),out=[];
  for(const line of lines){
-  // Extraction par référence et zone numérique de fin, sans stocker les prix.
-  const m=line.match(/^(\d{13})\s+(.+?)\s+((?:\d+[.,]\d{2}\s*){2,})$/);
+  // Les factures Drive affichent généralement : code-barres, libellé,
+  // prix unitaire, remise, quantité, net HT, TVA, cagnotte éventuelle, TTC.
+  // On n'enregistre jamais les prix : seule la quantité est extraite.
+  const m=line.match(/^(\d{13})\s+(.+?)\s+((?:\d+[.,]\d{2}|\d+)\s*){3,}$/);
   if(!m)continue;
-  const barcode=m[1],name=m[2].trim(),nums=m[3].match(/\d+[.,]\d{2}/g)||[];
-  if(!name||out.some(x=>x.barcode===barcode)||nums.length<2)continue;
-  const qtyCandidate=nums[1].replace(',','.');
-  const qty=Number(qtyCandidate);
+  const barcode=m[1],name=m[2].trim();
+  const tail=line.slice(m[0].indexOf(name)+name.length).trim();
+  const tokens=tail.match(/\d+[.,]\d{2}|\d+/g)||[];
+  if(!name||out.some(x=>x.barcode===barcode)||tokens.length<3)continue;
+  // Exemple utilisateur : 4,28 1 4,28 5,50 4,52 -> quantité = 1 (2e token).
+  // Si le format diffère, on retient une quantité entière plausible au 2e token.
+  const qtyToken=tokens[1];
+  const qty=Number(String(qtyToken).replace(',','.'));
   if(!Number.isFinite(qty)||qty<=0||qty>1000)continue;
   out.push({barcode,name,qty,pack:extractPack(name),checked:true});
  }
