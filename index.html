@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#596344">
 <title>Notre Cuisine</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--green:#596344;--light:#eef0e7;--cream:#faf7ef;--brown:#806d52}
 *{box-sizing:border-box}
@@ -31,6 +32,12 @@ nav button{font-size:12px;min-width:85px;padding:10px 6px;margin:2px}
 .empty{color:#888;font-style:italic;padding:12px 0}
 a{color:var(--green);overflow-wrap:anywhere}
 .pill{display:inline-block;background:var(--light);color:var(--green);padding:5px 9px;border-radius:20px;font-size:12px}
+#auth-screen{display:none;min-height:75vh;align-items:center;justify-content:center;padding:20px}
+body:not(.connected) #auth-screen{display:flex}
+body:not(.connected) main,body:not(.connected) nav{display:none}
+.auth-card{background:white;border-radius:18px;padding:22px;width:100%;max-width:430px;box-shadow:0 5px 20px #00000012}
+.auth-card h2{margin-top:0}
+#auth-message{min-height:20px}
 </style>
 </head>
 <body>
@@ -38,6 +45,19 @@ a{color:var(--green);overflow-wrap:anywhere}
 <h1>🌿 Notre Cuisine</h1>
 <p>La cuisine de toute la famille</p>
 </header>
+
+<div id="auth-screen">
+  <div class="auth-card">
+    <h2>🌿 Bienvenue dans Notre Cuisine</h2>
+    <p>Connecte-toi pour retrouver votre cuisine partagée sur vos deux téléphones.</p>
+    <label>Adresse e-mail</label>
+    <input id="auth-email" type="email" autocomplete="email" placeholder="tonadresse@email.com">
+    <label>Mot de passe</label>
+    <input id="auth-password" type="password" autocomplete="current-password" placeholder="Ton mot de passe">
+    <button id="auth-login" onclick="loginToApp()">Se connecter</button>
+    <p id="auth-message" class="small" role="status"></p>
+  </div>
+</div>
 <main id="app"></main>
 <nav>
 <button onclick="page('home')">🏡 Accueil</button>
@@ -50,7 +70,7 @@ a{color:var(--green);overflow-wrap:anywhere}
 </nav>
 <script>
 const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
-const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+function save(k,v){localStorage.setItem(k,JSON.stringify(v));if(window.cloudReady)scheduleCloudSave();}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let stock=get('stock',[]),shopping=get('shopping',[]),recipes=get('recipes',[]),plans=get('plans',{});
 let stockPlace='Placard',stockSearch='';
@@ -489,7 +509,102 @@ function addWeeklyIngredients(){
  save('shopping',shopping);alert(added+' ingrédient(s) manquant(s) ajouté(s) à la liste de courses.');page('shopping');
 }
 
-page('home');
+/* page initiale remplacée par l'initialisation sécurisée */
 </script>
+
+<script>
+const SUPABASE_URL = 'https://aoxvtdjezydcpcsbunzg.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_fFfcZg2HMDVhg48QO0e5YQ_vMYxS_EP';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+window.cloudReady = false;
+let householdId = null;
+let cloudSaveTimer = null;
+
+function showAuthMessage(message, isError=false){
+  const el=document.getElementById('auth-message');
+  if(el){el.textContent=message;el.style.color=isError?'#a33':'#596344';}
+}
+async function loginToApp(){
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-password').value;
+  if(!email||!password){showAuthMessage('Renseigne ton adresse e-mail et ton mot de passe.',true);return;}
+  const button=document.getElementById('auth-login');
+  button.disabled=true;button.textContent='Connexion…';showAuthMessage('');
+  const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+  button.disabled=false;button.textContent='Se connecter';
+  if(error){showAuthMessage('Connexion impossible : vérifie ton e-mail et ton mot de passe.',true);return;}
+  await initializeCloudApp();
+}
+async function initializeCloudApp(){
+  showAuthMessage('Chargement de votre cuisine…');
+  const {data:{user},error:authError}=await supabaseClient.auth.getUser();
+  if(authError||!user){document.body.classList.remove('connected');return;}
+  const {data:membership,error:memberError}=await supabaseClient
+    .from('household_members').select('household_id').eq('user_id',user.id).single();
+  if(memberError||!membership){
+    showAuthMessage('Ton compte ne semble pas encore rattaché au foyer. Contacte-nous avant de continuer.',true);
+    await supabaseClient.auth.signOut();return;
+  }
+  householdId=membership.household_id;
+  const {data:cloudRow,error:loadError}=await supabaseClient
+    .from('app_data').select('data').eq('household_id',householdId).maybeSingle();
+  if(loadError){showAuthMessage('Impossible de charger les données. Réessaie dans un instant.',true);return;}
+  if(cloudRow&&cloudRow.data){
+    const d=cloudRow.data;
+    stock=Array.isArray(d.stock)?d.stock:[];
+    shopping=Array.isArray(d.shopping)?d.shopping:[];
+    recipes=Array.isArray(d.recipes)?d.recipes:[];
+    plans=d.plans&&typeof d.plans==='object'?d.plans:{};
+    if(d.defaultPeople)localStorage.setItem('defaultPeople',JSON.stringify(d.defaultPeople));
+    saveLocalCloudData();
+  }else{
+    await writeCloudData();
+  }
+  window.cloudReady=true;
+  document.body.classList.add('connected');
+  document.getElementById('auth-screen').style.display='none';
+  page('home');
+  showAuthMessage('');
+  const header=document.querySelector('header p');
+  if(header)header.textContent='Connecté · Cuisine partagée';
+  const old=document.getElementById('logout-button');
+  if(!old){
+    const b=document.createElement('button');b.id='logout-button';b.className='light';b.textContent='Se déconnecter';b.onclick=logoutFromApp;
+    document.querySelector('header').appendChild(b);
+  }
+}
+function saveLocalCloudData(){
+  localStorage.setItem('stock',JSON.stringify(stock));
+  localStorage.setItem('shopping',JSON.stringify(shopping));
+  localStorage.setItem('recipes',JSON.stringify(recipes));
+  localStorage.setItem('plans',JSON.stringify(plans));
+}
+function currentCloudData(){
+  return {stock,shopping,recipes,plans,defaultPeople:Number(get('defaultPeople',3))||3};
+}
+async function writeCloudData(){
+  if(!householdId)return;
+  const {error}=await supabaseClient.from('app_data').upsert({
+    household_id:householdId,data:currentCloudData(),updated_at:new Date().toISOString()
+  },{onConflict:'household_id'});
+  if(error)console.error('Erreur de synchronisation Notre Cuisine:',error.message);
+}
+function scheduleCloudSave(){
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer=setTimeout(()=>writeCloudData(),700);
+}
+async function logoutFromApp(){
+  window.cloudReady=false;householdId=null;
+  await supabaseClient.auth.signOut();
+  document.body.classList.remove('connected');
+  const b=document.getElementById('logout-button');if(b)b.remove();
+  const header=document.querySelector('header p');if(header)header.textContent='La cuisine de toute la famille';
+  showAuthMessage('Tu es déconnectée.');
+}
+supabaseClient.auth.getSession().then(({data})=>{
+  if(data.session)initializeCloudApp();
+});
+</script>
+
 </body>
 </html>
