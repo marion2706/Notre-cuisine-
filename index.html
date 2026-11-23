@@ -73,7 +73,7 @@ body:not(.connected) main,body:not(.connected) nav{display:none}
 <button onclick="page('home')">🏡 Accueil</button>
 <button onclick="page('stock')">🥕 Inventaire</button>
 <button onclick="page('shopping')">🛒 Courses</button>
-<button onclick="page('recipes')">🍲 Recettes</button>
+<button onclick="try{page('recipes')}catch(e){console.error(e);alert('Le détail du problème : '+(e.message||e))}">🍲 Recettes</button>
 <button onclick="page('planning')">📅 Planning</button>
 <button onclick="page('alerts')">🔔 Alertes</button>
 <button onclick="page('settings')">⚙️ Réglages</button>
