@@ -153,18 +153,23 @@ const regionalRecipeData=[["Nord","Plat","Welsh traditionnel","pain de campagne;
 function regionalIngredientLine(item){
  const x=item.trim().toLocaleLowerCase('fr');
  const rules=[
-  [/^pâte (brisée|feuilletée|sablée)$/,'1 rouleau'],[/^pâte fine$/,'1 grande pâte fine'],[/^pâte$/,'1 pâte'],[/^crêpes salées$/,'3 crêpes'],[/^brioche$/,'1 brioche de 300 g'],
-  [/^(bœuf|boeuf|veau|agneau|porc|poulet|chair à saucisse|veau haché|bœuf haché|boeuf haché|gras-double)/,'400 g'],[/^saucisson à cuire$/,'1 saucisson (environ 350 g)'],[/^saucisses/,'3 saucisses'],[/^andouille/,'200 g'],[/^jambon/,'3 tranches'],[/^lardons$/,'120 g'],[/^poitrine demi-sel$/,'200 g'],
-  [/^(pommes de terre|pomme de terre)$/,'600 g'],[/^carottes?$/,'2 moyennes'],[/^oignons?$/,'2 moyens'],[/^échalote$/,'1'],[/^ail$/,'2 gousses'],[/^poireaux?$/,'2'],[/^céleri|^cèleri/,'1 branche'],[/^endives?$/,'3'],[/^tomates?$/,'3 moyennes'],[/^courgettes?$/,'2 petites'],[/^poivrons?$/,'2'],[/^champignons?$/,'200 g'],[/^haricots verts$/,'200 g'],[/^cardons/,'500 g'],[/^salade frisée$/,'1 petite salade'],
-  [/^farine/,'200 g'],[/^farine de sarrasin$/,'180 g'],[/^farine de maïs$/,'150 g'],[/^œufs?$/,'3'],[/^jaunes? d’œufs?$/,'2'],[/^blancs? d’œufs?$/,'2'],[/^lait/,'25 cl'],[/^crème/,'20 cl'],[/^fromage blanc/,'250 g'],[/^beurre/,'60 g'],[/^sucre/,'80 g'],[/^chocolat/,'100 g'],[/^cheddar$/,'180 g'],[/^maroilles$/,'180 g'],[/^gruyère râpé$/,'80 g'],[/^fromage râpé$/,'80 g'],[/^parmesan$/,'40 g'],[/^pâte de pruneaux|^pruneaux$/,'100 g'],[/^raisins secs$/,'60 g'],[/^amandes$/,'30 g'],[/^poudre d’amande$/,'125 g'],[/^pralines roses$/,'200 g'],[/^confiture/,'150 g'],
-  [/^bière/,'15 cl'],[/^vin blanc$/,'15 cl'],[/^vin rouge$/,'25 cl'],[/^cidre/,'15 cl'],[/^bouillon/,'30 cl'],[/^huile/,'2 c. à soupe'],[/^moutarde$/,'1 c. à soupe'],[/^chapelure$/,'40 g'],[/^levure/,'1 sachet'],[/^eau/,'15 cl'],[/^sel$/,'1 pincée'],[/^poivre$/,'à votre goût'],[/^thym|^laurier|^persil|^ciboulette|^basilic|^vanille|^cannelle|^muscade|^piment|^baies/,'1 petite dose'],[/^citron$/,'½'],[/^orange$/,'½'],[/^pommes?$/,'3'],[/^riz/,'100 g'],[/^pâtes$/,'240 g'],[/^quenelles/,'3 pièces'],[/^olives/,'100 g'],[/^câpres$/,'1 c. à soupe'],[/^œuf/,'3']
+  [/^pâte (brisée|feuilletée|sablée)$/,'1 rouleau'],[/^pâte fine$/,'1 grande pâte fine'],[/^pâte$/,'1 pâte'],[/^crêpes salées$/,'3 crêpes'],[/^brioche$/,'1 brioche de 300 grammes'],
+  [/^(bœuf|boeuf|veau|agneau|porc|poulet|chair à saucisse|veau haché|bœuf haché|boeuf haché|gras-double)/,'400 grammes'],[/^saucisson à cuire$/,'1 saucisson (environ 350 grammes)'],[/^saucisses/,'3'],[/^andouille/,'200 grammes'],[/^jambon/,'100 grammes'],[/^pain/,'3 tranches'],[/^lardons$/,'120 grammes'],[/^poitrine demi-sel$/,'200 grammes'],
+  [/^(pommes de terre|pomme de terre)$/,'600 grammes'],[/^carottes?$/,'2 moyennes'],[/^oignons?$/,'2 moyens'],[/^échalote$/,'1'],[/^ail$/,'2 gousses'],[/^poireaux?$/,'2'],[/^céleri|^cèleri/,'1 branche'],[/^endives?$/,'3'],[/^tomates?$/,'3 moyennes'],[/^courgettes?$/,'2 petites'],[/^poivrons?$/,'2'],[/^champignons?$/,'200 grammes'],[/^haricots verts$/,'200 grammes'],[/^cardons/,'500 grammes'],[/^salade frisée$/,'1 petite salade'],
+  [/^farine de sarrasin$/,'180 grammes'],[/^farine de maïs$/,'150 grammes'],[/^farine/,'200 grammes'],[/^œufs?$/,'3'],[/^jaunes? d’œufs?$/,'2'],[/^blancs? d’œufs?$/,'2'],[/^lait/,'25 centilitres'],[/^crème/,'20 centilitres'],[/^fromage blanc/,'250 grammes'],[/^beurre/,'60 grammes'],[/^sucre/,'80 grammes'],[/^chocolat/,'100 grammes'],[/^cheddar$/,'180 grammes'],[/^maroilles$/,'180 grammes'],[/^gruyère râpé$/,'80 grammes'],[/^fromage râpé$/,'80 grammes'],[/^parmesan$/,'40 grammes'],[/^pâte de pruneaux|^pruneaux$/,'100 grammes'],[/^raisins secs$/,'60 grammes'],[/^amandes$/,'30 grammes'],[/^poudre d’amande$/,'125 grammes'],[/^pralines roses$/,'200 grammes'],[/^confiture/,'150 grammes'],
+  [/^bière/,'15 centilitres'],[/^vin blanc$/,'15 centilitres'],[/^vin rouge$/,'25 centilitres'],[/^cidre/,'15 centilitres'],[/^bouillon/,'30 centilitres'],[/^huile/,'2 cuillères à soupe'],[/^moutarde$/,'1 cuillère à soupe'],[/^chapelure$/,'40 grammes'],[/^levure/,'1 sachet'],[/^eau/,'15 centilitres'],[/^sel$/,'1 pincée'],[/^poivre$/,'à votre goût'],[/^thym|^laurier|^persil|^ciboulette|^basilic|^vanille|^cannelle|^muscade|^piment|^baies/,'1 petite pincée'],[/^citron$/,'½'],[/^orange$/,'½'],[/^pommes?$/,'3'],[/^riz/,'100 grammes'],[/^pâtes$/,'240 grammes'],[/^quenelles/,'3 pièces'],[/^olives/,'100 grammes'],[/^câpres$/,'1 cuillère à soupe']
  ];
  const hit=rules.find(([re])=>re.test(x));
- const amount=hit?hit[1]:'quantité à ajuster';
- const grams=amount.replace(' g',' grammes');
- if(grams.endsWith(' grammes'))return '- '+grams+' de '+item.trim();
- if(amount.endsWith(' cl'))return '- '+amount.replace(' cl',' centilitres')+' de '+item.trim();
- if(amount.includes('moyenne')||amount.includes('moyens')||amount.includes('petites'))return '- '+amount+' '+item.trim();
+ const amount=hit?hit[1]:'quantité à préciser';
+ if(amount.endsWith('grammes')||amount.endsWith('centilitres'))return '- '+amount+' de '+item.trim();
+ if(amount==='3 tranches')return '- 3 tranches de '+item.trim();
+ if(amount==='2 moyennes'||amount==='2 moyens'||amount==='2 petites')return '- '+amount+' '+item.trim();
+ if(amount==='3')return '- 3 '+item.trim();
+ if(amount==='1')return '- 1 '+item.trim();
+ if(amount==='2')return '- 2 '+item.trim();
+ if(amount==='3 pièces')return '- 3 pièces de '+item.trim();
+ if(amount.endsWith('cuillères à soupe'))return '- '+amount+' de '+item.trim();
+ if(amount==='à votre goût'||amount==='1 pincée'||amount==='1 petite pincée')return '- '+item.trim()+' : '+amount;
  return '- '+amount+' de '+item.trim();
 }
 function regionalPrepSteps(text){
