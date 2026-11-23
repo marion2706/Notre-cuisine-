@@ -364,19 +364,20 @@ async function importRecipeFromLink(){
  try{const u=new URL(url);if(!['http:','https:'].includes(u.protocol))throw 0}catch(e){status.textContent='Le lien doit commencer par https://';return}
  status.textContent='Lecture de la recette en cours…';
  try{
-  const response=await fetch('https://r.jina.ai/'+url,{headers:{'Accept':'text/plain'}});
-  if(!response.ok)throw new Error('La page ne peut pas être lue.');
-  const raw=await response.text(),lines=raw.replace(/\\r/g,'').split('\\n').map(x=>x.trim()).filter(Boolean);
-  const title=lines.find(x=>/^#\\s+/.test(x))?.replace(/^#+\\s*/,'').replace(/\\s*[|–-]\\s*Marmiton.*$/i,'').trim();
-  const section=(regexes)=>{const start=lines.findIndex(x=>regexes.some(p=>p.test(x.replace(/^#+\\s*/,''))));if(start<0)return '';const out=[];for(let i=start+1;i<lines.length;i++){const line=lines[i];if(/^#{1,4}\\s/.test(line)&&out.length)break;const v=line.replace(/^[-*•]\\s*/,'').replace(/^\\d+[.)]\\s*/,'').trim();if(v&&v.length<450)out.push(v);if(out.length>=35)break}return out.join('\\n')};
-  const ingredients=section([/ingrédients?/i,/ce qu.?il vous faut/i]);
-  const preparation=section([/préparation/i,/instructions?/i,/étapes?/i]);
-  if(title&&!document.getElementById('rname').value)document.getElementById('rname').value=title;
-  if(ingredients)document.getElementById('ingredients').value=ingredients;
-  if(preparation)document.getElementById('preparation').value=preparation;
-  if(!ingredients&&!preparation)throw new Error('Ce site ne permet pas de récupérer automatiquement cette recette.');
-  status.textContent='Import terminé ! Vérifie le nom, les quantités et les étapes avant d’enregistrer.';
- }catch(e){status.textContent='Import automatique impossible pour ce lien. Tu peux ouvrir la recette et compléter les champs manuellement.'}
+  const {data,error}=await supabaseClient.functions.invoke('import-recipe',{body:{url}});
+  if(error)throw error;
+  if(!data||!data.recipe)throw new Error(data?.error||'Aucune recette exploitable trouvée.');
+  const r=data.recipe;
+  if(r.name)document.getElementById('rname').value=r.name;
+  if(r.ingredients)document.getElementById('ingredients').value=r.ingredients.join? r.ingredients.join('\\n'):r.ingredients;
+  if(r.preparation)document.getElementById('preparation').value=r.preparation.join? r.preparation.join('\\n'):r.preparation;
+  if(r.image&&!document.getElementById('rphoto').value)document.getElementById('rphoto').value=r.image;
+  if(r.servings)document.getElementById('servings').value=parseInt(r.servings,10)||get('defaultPeople',3);
+  status.textContent='Recette importée ! Vérifie les quantités et les étapes, puis enregistre.';
+ }catch(e){
+  console.error('Import recette:',e);
+  status.textContent='Import impossible pour ce lien pour le moment. Le site peut bloquer la lecture ou ne pas fournir de fiche recette automatique.';
+ }
 }
 function addRecipe(){
  const name=document.getElementById('rname').value.trim();if(!name)return alert('Ajoute le nom de la recette.');
