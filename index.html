@@ -442,6 +442,53 @@ function randomRecipe(){
  box.innerHTML=r?'<b>'+esc(r.name)+'</b><p class="mini">'+(available.length?'Tous les ingrédients semblent disponibles dans le stock.':'Aucune recette entièrement disponible : voici une autre idée.')+'</p><button class="light" onclick="showRecipe('+recipes.indexOf(r)+')">Voir la recette</button>':'Ajoute d’abord quelques recettes !';
 }
 function addWeeklyIngredientsLegacy(){addWeeklyIngredients()}
+
+function addStock(){
+ const name=document.getElementById('product').value.trim();if(!name)return alert('Indique le nom du produit.');
+ stock.push({name,place:stockPlace,quantity:document.getElementById('quantity').value,expiry:document.getElementById('expiry').value,barcode:document.getElementById('barcode')?.value.trim()||''});
+ save('stock',stock);stockSearch='';renderStock();
+}
+function unitBase(unit){
+ const u=(unit||'').toLowerCase();
+ if(u==='kg')return {type:'mass',factor:1000,unit:'g'};
+ if(u==='g')return {type:'mass',factor:1,unit:'g'};
+ if(u==='mg')return {type:'mass',factor:.001,unit:'g'};
+ if(u==='l')return {type:'volume',factor:1000,unit:'ml'};
+ if(u==='cl')return {type:'volume',factor:10,unit:'ml'};
+ if(u==='ml')return {type:'volume',factor:1,unit:'ml'};
+ if(['piece','pieces','pce','pcs'].includes(u))return {type:'count',factor:1,unit:'piece'};
+ return null;
+}
+function parsedStockQuantity(value){
+ const m=String(value||'').match(/([0-9]+(?:[.,][0-9]+)?)\s*(kg|g|mg|l|cl|ml|pieces?|pce|pcs)\b/i);
+ if(!m)return null;const base=unitBase(m[2]);if(!base)return null;
+ return {amount:Number(m[1].replace(',','.'))*base.factor,type:base.type,unit:base.unit};
+}
+function missingIngredients(start){
+ return plannedIngredientNeeds(start).map(need=>{
+  const target=unitBase(need.unit);if(!target||!need.hasAmount)return need;
+  let available=0,unknown=false;
+  stock.filter(s=>{const sn=normalized(s.name),n=normalized(need.name);return sn===n||sn.includes(n)||n.includes(sn)}).forEach(s=>{
+   const q=parsedStockQuantity(s.quantity);
+   if(!q)unknown=true;else if(q.type===target.type)available+=q.amount;
+  });
+  if(unknown)return null;
+  const remaining=need.amount-available/target.factor;
+  return remaining>0?{...need,amount:remaining}:null;
+ }).filter(Boolean);
+}
+function weeklyIngredientsHtml(start){
+ const all=plannedIngredientNeeds(start),missing=missingIngredients(start);
+ if(!all.length)return '<p class="empty">Ajoute des recettes avec leurs ingrédients au planning pour calculer les courses.</p>';
+ const missingNames=new Set(missing.map(x=>normalized(x.name)));
+ return '<p><b>'+missing.length+' ingrédient(s) à prévoir</b> sur '+all.length+' au total.</p><ul>'+all.map(x=>'<li>'+esc(formatNeed(missing.find(m=>normalized(m.name)===normalized(x.name))||x))+(missingNames.has(normalized(x.name))?'':' <span class="pill">Quantité suffisante en stock</span>')+'</li>').join('')+'</ul>';
+}
+function addWeeklyIngredients(){
+ const missing=missingIngredients(weekStart(planningWeekOffset));let added=0;
+ missing.forEach(x=>{const name=formatNeed(x);if(!shopping.some(s=>normalized(s.name)===normalized(name)&&!s.done)){shopping.push({name,done:false,source:'planning'});added++}});
+ save('shopping',shopping);alert(added+' ingrédient(s) manquant(s) ajouté(s) à la liste de courses.');page('shopping');
+}
+
 page('home');
 </script>
 </body>
