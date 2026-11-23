@@ -616,20 +616,21 @@ function addWeeklyIngredients(){
 let parsedPurchaseItems=[];
 async function ensurePdfJs(){
  if(window.pdfjsLib)return window.pdfjsLib;
- await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';s.type='module';s.onload=resolve;s.onerror=()=>reject(new Error('Chargement du lecteur PDF impossible.'));document.head.appendChild(s);});
- // Module PDF.js is exposed via a module script shim to ensure browser support.
- if(!window.pdfjsLib){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.type='module';s.textContent="import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs'; window.pdfjsLib=pdfjsLib; window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';";document.head.appendChild(s);setTimeout(()=>window.pdfjsLib?resolve():reject(new Error('Lecteur PDF non initialisé.')),1000);});}
+ await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';s.onload=resolve;s.onerror=()=>reject(new Error('Chargement du lecteur PDF impossible.'));document.head.appendChild(s);});
+ window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
  return window.pdfjsLib;
 }
 function parseAuchanInvoiceText(text){
  const lines=String(text||'').split(/\n/).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean),out=[];
- for(let i=0;i<lines.length;i++){
-  const line=lines[i];
-  const m=line.match(/^(\d{13})\s+(.+?)\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})?\s+(\d+)\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})$/);
+ for(const line of lines){
+  // Extraction par référence et zone numérique de fin, sans stocker les prix.
+  const m=line.match(/^(\d{13})\s+(.+?)\s+((?:\d+[.,]\d{2}\s*){2,})$/);
   if(!m)continue;
-  const barcode=m[1],name=m[2].trim(),qty=Number(m[5]);
-  if(!name||!qty||out.some(x=>x.barcode===barcode))continue;
-  // Le format Auchan fournit le conditionnement dans le libellé (ex. 500 g); ne garder aucun prix.
+  const barcode=m[1],name=m[2].trim(),nums=m[3].match(/\d+[.,]\d{2}/g)||[];
+  if(!name||out.some(x=>x.barcode===barcode)||nums.length<2)continue;
+  const qtyCandidate=nums[1].replace(',','.');
+  const qty=Number(qtyCandidate);
+  if(!Number.isFinite(qty)||qty<=0||qty>1000)continue;
   out.push({barcode,name,qty,pack:extractPack(name),checked:true});
  }
  return out;
