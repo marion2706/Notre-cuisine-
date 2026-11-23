@@ -160,7 +160,12 @@ function regionalIngredientLine(item){
   [/^bière/,'15 cl'],[/^vin blanc$/,'15 cl'],[/^vin rouge$/,'25 cl'],[/^cidre/,'15 cl'],[/^bouillon/,'30 cl'],[/^huile/,'2 c. à soupe'],[/^moutarde$/,'1 c. à soupe'],[/^chapelure$/,'40 g'],[/^levure/,'1 sachet'],[/^eau/,'15 cl'],[/^sel$/,'1 pincée'],[/^poivre$/,'à votre goût'],[/^thym|^laurier|^persil|^ciboulette|^basilic|^vanille|^cannelle|^muscade|^piment|^baies/,'1 petite dose'],[/^citron$/,'½'],[/^orange$/,'½'],[/^pommes?$/,'3'],[/^riz/,'100 g'],[/^pâtes$/,'240 g'],[/^quenelles/,'3 pièces'],[/^olives/,'100 g'],[/^câpres$/,'1 c. à soupe'],[/^œuf/,'3']
  ];
  const hit=rules.find(([re])=>re.test(x));
- return item.trim()+' : '+(hit?hit[1]:'quantité à ajuster selon le goût');
+ const amount=hit?hit[1]:'quantité à ajuster';
+ const grams=amount.replace(' g',' grammes');
+ if(grams.endsWith(' grammes'))return '- '+grams+' de '+item.trim();
+ if(amount.endsWith(' cl'))return '- '+amount.replace(' cl',' centilitres')+' de '+item.trim();
+ if(amount.includes('moyenne')||amount.includes('moyens')||amount.includes('petites'))return '- '+amount+' '+item.trim();
+ return '- '+amount+' de '+item.trim();
 }
 function regionalPrepSteps(text){
  return String(text||'').split(/(?<=[.!?])\s+/).map(x=>x.trim()).filter(Boolean).map((x,i)=>(i+1)+' / '+x).join('\n');
