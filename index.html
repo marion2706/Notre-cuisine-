@@ -5,6 +5,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#596344">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<link rel="apple-touch-icon" href="./icon.svg">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Notre Cuisine">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Notre Cuisine</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -42,8 +48,11 @@ body:not(.connected) main,body:not(.connected) nav{display:none}
 </head>
 <body>
 <header>
-<h1>🌿 Notre Cuisine</h1>
-<p>La cuisine de toute la famille</p>
+<div style="display:flex;align-items:center;gap:13px">
+<img src="./icon.svg" alt="" width="64" height="64" style="border-radius:16px;background:#faf7ef;flex:none">
+<div><h1>Notre Cuisine</h1>
+<p>La cuisine de toute la famille</p></div>
+</div>
 </header>
 
 <div id="auth-screen">
