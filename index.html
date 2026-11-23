@@ -442,7 +442,7 @@ function randomRecipe(){
  box.innerHTML=r?'<b>'+esc(r.name)+'</b><p class="mini">'+(available.length?'Tous les ingrédients semblent disponibles dans le stock.':'Aucune recette entièrement disponible : voici une autre idée.')+'</p><button class="light" onclick="showRecipe('+recipes.indexOf(r)+')">Voir la recette</button>':'Ajoute d’abord quelques recettes !';
 }
 function addWeeklyIngredientsLegacy(){addWeeklyIngredients()}
+page('home');
 </script>
-
 </body>
 </html>
