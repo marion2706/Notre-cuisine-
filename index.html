@@ -127,7 +127,7 @@ app.innerHTML=`<h2>🥕 Mon inventaire</h2>
 <label>Nom du produit</label><input id="product" placeholder="Ex : Pâtes, lait, poulet...">
 <label>Quantité restante</label><input id="quantity" placeholder="Ex : 2 paquets, 500 g">
 <label>Date limite (facultatif)</label><input id="expiry" type="date">
-<button onclick="addStock()">Ajouter dans ${stockPlace.toLowerCase()}</button></div><div class="card"><h3>📄 Importer mes achats (facture PDF)</h3><p class="small">Sélectionne une facture PDF. Les produits seront préremplis pour vérification avant ajout. Aucun prix n'est conservé.</p><input id="purchasePdf" type="file" accept="application/pdf"><button onclick="readPurchasePdf()">Lire la facture PDF</button><p id="purchasePdfStatus" class="small" role="status"></p><div id="purchasePdfPreview"></div></div>
+<button onclick="addStock()">Ajouter dans ${stockPlace.toLowerCase()}</button></div><div class="card"><h3>📄 Importer mes achats (facture PDF)</h3><p class="small">Sélectionne une facture PDF. Les produits seront préremplis pour vérification avant ajout. Aucun prix n’est conservé.</p><input id="purchasePdf" type="file" accept="application/pdf"><button onclick="readPurchasePdf()">Lire la facture PDF</button><p id="purchasePdfStatus" class="small" role="status"></p><div id="purchasePdfPreview"></div></div>
 <div class="card"><h3>🔎 Rechercher un produit</h3><input value="${esc(stockSearch)}" placeholder="Rechercher un aliment..." oninput="stockSearch=this.value;renderStockKeepFocus(this.value)" id="stockSearch">
 <h3>${stockPlace}</h3>
 ${shown.map(x=>{let i=stock.indexOf(x);return `<div class="item"><b>${esc(x.name)}</b><br><span class="small">${esc(x.quantity||'Quantité non précisée')} ${x.expiry?'· Date : '+esc(x.expiry):''}</span>
