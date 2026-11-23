@@ -649,7 +649,21 @@ async function readPurchasePdf(){
  status.textContent='Lecture du PDF…';preview.innerHTML='';
  try{
   const pdfjs=await ensurePdfJs();const bytes=await file.arrayBuffer();const doc=await pdfjs.getDocument({data:bytes}).promise;let text='';
-  for(let p=1;p<=doc.numPages;p++){const page=await doc.getPage(p),content=await page.getTextContent();text+=content.items.map(x=>x.str).join(' ')+'\n';}
+  for(let p=1;p<=doc.numPages;p++){
+   const page=await doc.getPage(p),content=await page.getTextContent();
+   // Regrouper les cellules du tableau par ligne visuelle, puis de gauche à droite.
+   const rows=[];
+   for(const item of content.items){
+    const value=String(item.str||'').trim();
+    if(!value)continue;
+    const x=Number(item.transform?.[4]||0),y=Number(item.transform?.[5]||0);
+    let row=rows.find(r=>Math.abs(r.y-y)<=2.5);
+    if(!row){row={y,items:[]};rows.push(row);}
+    row.items.push({x,value});
+   }
+   rows.sort((a,b)=>b.y-a.y);
+   text+=rows.map(row=>row.items.sort((a,b)=>a.x-b.x).map(item=>item.value).join(' ')).join('\n')+'\n';
+  }
   parsedPurchaseItems=parseAuchanInvoiceText(text);
   if(!parsedPurchaseItems.length){status.textContent='Aucun article reconnu automatiquement. Essaie un PDF texte (non scanné) ou copie-colle le détail de facture dans un futur import.';return}
   status.textContent=parsedPurchaseItems.length+' article(s) détecté(s). Vérifie la sélection avant ajout.';
