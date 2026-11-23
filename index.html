@@ -182,7 +182,7 @@ function refreshRegionalRecipes(){
   const source=byName.get(String(existing.name||'').trim().toLocaleLowerCase('fr'));
   if(!source)return existing;
   changed++;
-  return {...existing,region:source[0],category:source[1],ingredients:source[3].split(';').map(regionalIngredientLine).join('\\n'),preparation:regionalPrepSteps(source[4]),servings:3,prepTime:20,cookTime:35,regionalCollection:true,favorite:!!existing.favorite,photo:existing.photo||''};
+  return {...existing,region:source[0],category:source[1],ingredients:source[3].split(';').map(regionalIngredientLine).join('\n'),preparation:regionalPrepSteps(source[4]),servings:3,prepTime:20,cookTime:35,regionalCollection:true,favorite:!!existing.favorite,photo:existing.photo||''};
  });
  return changed;
 }
