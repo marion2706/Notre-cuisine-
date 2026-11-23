@@ -150,7 +150,7 @@ function checkBuy(i){shopping[i].done=!shopping[i].done;save('shopping',shopping
 function renderRecipes(){
  const app=document.getElementById('app');
  const shown=recipes.map((r,i)=>({...r,_index:i})).filter(r=>(recipeCategoryFilter==='Toutes'||r.category===recipeCategoryFilter)&&(recipeRegionFilter==='Toutes'||r.region===recipeRegionFilter));
- app.innerHTML='<h2>🍲 Nos recettes</h2><div class="card"><details><summary style="color:var(--green);font-weight:700;font-size:18px;cursor:pointer;padding:5px 0">＋ Ajouter une recette</summary><div style="padding-top:14px"><p class="small">Tu peux ajouter tes propres recettes à tout moment. Elles resteront dans votre bibliothèque avec les recettes régionales.</p><label>Lien de la recette (facultatif)</label><input id="recipeUrl" type="url" placeholder="https://…"><button class="light" onclick="openRecipeLink()">Ouvrir le lien</button><label>Nom de la recette</label><input id="rname" placeholder="Ex : Gratin maison"><label>Catégorie</label><select id="category">'+categories.map(c=>'<option>'+c+'</option>').join('')+'</select><label>Région ou origine (facultatif)</label><select id="recipeRegion"><option value="">Aucune région</option>'+regions.map(r=>'<option>'+r+'</option>').join('')+'</select><label>Ingrédients (un par ligne)</label><textarea id="ingredients" placeholder="Ex : 200 g de farine"></textarea><label>Préparation</label><textarea id="preparation" placeholder="Étapes de préparation"></textarea><label>Temps de préparation (minutes)</label><input id="prepTime" type="number" min="0" value="15"><label>Temps de cuisson (minutes)</label><input id="cookTime" type="number" min="0" value="30"><label>Nombre de personnes</label><input id="servings" type="number" min="1" value="3"><button onclick="addRecipe()">Enregistrer ma recette</button></div></details></div><div class="card"><h3>🗺️ Collection de recettes régionales</h3><p>60 recettes prêtes à ajouter : 10 par région. Elles s’ajoutent à tes recettes personnelles sans les remplacer.</p><button onclick="addRegionalRecipes()">＋ Ajouter les recettes régionales</button></div><div class="card"><h3>📖 Ma bibliothèque</h3><label>Filtrer par catégorie</label><select onchange="recipeCategoryFilter=this.value;renderRecipes()"><option value="Toutes">Toutes les catégories</option>'+categories.map(c=>'<option '+(recipeCategoryFilter===c?'selected':'')+'>'+c+'</option>').join('')+'</select><label>Filtrer par région</label><select onchange="recipeRegionFilter=this.value;renderRecipes()"><option value="Toutes">Toutes les régions</option>'+regions.map(r=>'<option '+(recipeRegionFilter===r?'selected':'')+'>'+r+'</option>').join('')+'</select>'+(shown.length?shown.map(r=>'<div class="item"><b>'+esc(r.name)+'</b> <span class="pill">'+esc(r.category||'')+'</span>'+(r.region?' <span class="pill">'+esc(r.region)+'</span>':'')+'<p class="small">'+esc(r.ingredients||'Ingrédients non renseignés')+'</p><button class="light" onclick="showRecipe('+r._index+')">Voir / modifier</button><button class="light" onclick="deleteRecipe('+r._index+')">Supprimer</button></div>').join(''):'<p class="empty">Aucune recette dans cette sélection.</p>')+'</div>';
+ app.innerHTML='<h2>🍲 Nos recettes</h2><div class="card"><details><summary style="color:var(--green);font-weight:700;font-size:18px;cursor:pointer;padding:5px 0">＋ Ajouter une recette</summary><div style="padding-top:14px"><p class="small">Tu peux ajouter tes propres recettes à tout moment. Elles resteront dans votre bibliothèque avec les recettes régionales.</p><label>Lien de la recette (facultatif)</label><input id="recipeUrl" type="url" placeholder="https://…"><button class="light" onclick="openRecipeLink()">Ouvrir le lien</button><label>Nom de la recette</label><input id="rname" placeholder="Ex : Gratin maison"><label>Catégorie</label><select id="category">'+categories.map(c=>'<option>'+c+'</option>').join('')+'</select><label>Région ou origine (facultatif)</label><select id="recipeRegion"><option value="">Aucune région</option>'+regions.map(r=>'<option>'+r+'</option>').join('')+'</select><label>Ingrédients (un par ligne)</label><textarea id="ingredients" placeholder="Ex : 200 g de farine"></textarea><label>Préparation</label><textarea id="preparation" placeholder="Étapes de préparation"></textarea><label>Temps de préparation (minutes)</label><input id="prepTime" type="number" min="0" value="15"><label>Temps de cuisson (minutes)</label><input id="cookTime" type="number" min="0" value="30"><label>Nombre de personnes</label><input id="servings" type="number" min="1" value="3"><button onclick="addRecipe()">Enregistrer ma recette</button></div></details></div><div class="card"><h3>🗺️ Collection de recettes régionales</h3><p>60 recettes prêtes à ajouter : 10 par région. Elles s’ajoutent à tes recettes personnelles sans les remplacer.</p><button onclick="addRegionalRecipes()">＋ Ajouter les recettes régionales</button></div><div class="card"><h3>🍪 Biscuits de notre enfance</h3><p class="small">Importe en une seule fois les 13 recettes restantes depuis leurs pages illustrées. Les barquettes et BN déjà saisies ne sont pas dans cette sélection.</p><button onclick="importChildhoodBiscuits()">📥 Importer les 13 biscuits restants</button><p id="childhoodImportStatus" class="mini" role="status"></p></div><div class="card"><h3>📖 Ma bibliothèque</h3><label>Filtrer par catégorie</label><select onchange="recipeCategoryFilter=this.value;renderRecipes()"><option value="Toutes">Toutes les catégories</option>'+categories.map(c=>'<option '+(recipeCategoryFilter===c?'selected':'')+'>'+c+'</option>').join('')+'</select><label>Filtrer par région</label><select onchange="recipeRegionFilter=this.value;renderRecipes()"><option value="Toutes">Toutes les régions</option>'+regions.map(r=>'<option '+(recipeRegionFilter===r?'selected':'')+'>'+r+'</option>').join('')+'</select>'+(shown.length?shown.map(r=>'<div class="item"><b>'+esc(r.name)+'</b> <span class="pill">'+esc(r.category||'')+'</span>'+(r.region?' <span class="pill">'+esc(r.region)+'</span>':'')+'<p class="small">'+esc(r.ingredients||'Ingrédients non renseignés')+'</p><button class="light" onclick="showRecipe('+r._index+')">Voir / modifier</button><button class="light" onclick="deleteRecipe('+r._index+')">Supprimer</button></div>').join(''):'<p class="empty">Aucune recette dans cette sélection.</p>')+'</div>';
 }
 function openRecipeLink(){
 let url=document.getElementById('recipeUrl').value.trim();
@@ -436,6 +436,54 @@ async function importRecipeFromUrl(){
  }finally{
   if(button){button.disabled=false;button.textContent='📥 Importer automatiquement depuis ce lien'}
  }
+}
+async function importChildhoodBiscuits(){
+ const status=document.getElementById('childhoodImportStatus');
+ const sources=[
+  {name:'Petits Écoliers maison',url:'https://www.latelierderoxane.com/recettes/recette-petits-ecoliers-maison/'},
+  {name:'Cookies aux pépites de chocolat',url:'https://cuisine.journaldesfemmes.fr/recette/334828-cookies-aux-pepites-de-chocolat'},
+  {name:'Petits Princes au chocolat',url:'https://www.chefnini.com/petits-princes-bn-maison/'},
+  {name:'Oreo maison',url:'https://www.marieclaire.fr/cuisine/snickers-mikado-bn-c-est-meilleur-quand-c-est-fait-maison,1426716.asp'},
+  {name:'Petits-Beurre maison',url:'https://www.topsante.com/nutrition-et-recettes/recettes-sante/mikado-pepito-bounty-9-gouters-de-supermarche-a-faire-a-la-maison-652158'},
+  {name:'Spritz au chocolat',url:'https://liliebakery.fr/recette-biscuits-spritz/'},
+  {name:'Palets bretons',url:'https://www.tourismebretagne.com/selon-mes-envies/gastronomie/recettes/palets-bretons/'},
+  {name:'Lunettes de Romans',url:'https://www.syndicatdumiam.com/desserts/recette-biscuit-lunette-de-romans'},
+  {name:'Madeleines traditionnelles',url:'https://cuisine.journaldesfemmes.fr/recette/310112-madeleines-faciles'},
+  {name:'Mikado maison',url:'https://blog.cerfdellier.com/recette/mikado-au-chocolat-maison/'},
+  {name:'Langues de chat',url:'https://cuisine.journaldesfemmes.fr/recette/3123626-langues-de-chat-biscuits'},
+  {name:'Spéculoos maison',url:'https://leplaisirdegourmandise.blog4ever.com/faux-air-de-biscuits-les-bn-les-palmiers-au-sucreles-gaufres-fourreesles-lunettes-a-la-confitureles-langues-de-chat-les-speculoos-les-oreos-les-pim-s-les-petits-beurrevous-n-aurez-plus-d-excuses-pour-ne-pas-prendre-de-gouter'},
+  {name:'Sablés fourrés à la confiture',url:'https://cuisine.journaldesfemmes.fr/recette/360101-sables-a-la-confiture'}
+ ];
+ let added=0,skipped=0,failed=[];
+ for(let i=0;i<sources.length;i++){
+  const source=sources[i];
+  status.textContent='Importation '+(i+1)+' / '+sources.length+' : '+source.name+'…';
+  try{
+   const {data,error}=await supabaseClient.functions.invoke('import-recipe',{body:{url:source.url}});
+   if(error)throw new Error(error.message||'Fonction indisponible');
+   if(!data?.success||!data.recipe)throw new Error(data?.error||'Recette non détectée');
+   const r=data.recipe,recipeName=r.name||source.name;
+   const duplicate=recipes.some(existing=>{
+    const a=normalized(existing.name),b=normalized(recipeName),c=normalized(source.name);
+    return a===b||a===c||(b.includes('bn')&&a.includes('bn'));
+   });
+   if(duplicate){skipped++;continue;}
+   const servings=String(r.servings||'').match(/\d+/);
+   recipes.push({
+    name:recipeName,category:'Biscuits maison',
+    ingredients:Array.isArray(r.ingredients)?r.ingredients.join('\n'):String(r.ingredients||''),
+    preparation:String(r.preparation||''),
+    prepTime:Number(r.prepTime)||0,cookTime:Number(r.cookTime)||0,
+    servings:servings?Math.max(1,Number(servings[0])):3,
+    url:r.sourceUrl||source.url,photo:r.image||'',favorite:false
+   });
+   added++;
+  }catch(e){failed.push(source.name);}
+ }
+ save('recipes',recipes);
+ status.textContent=added+' recette(s) ajoutée(s), '+skipped+' déjà présentes, '+failed.length+' import(s) à vérifier.';
+ renderRecipes();
+ alert(added+' recette(s) ajoutée(s) à Notre Cuisine.'+(skipped?' '+skipped+' doublon(s) ignoré(s).':'')+(failed.length?' Import impossible pour : '+failed.join(', ')+'.':''));
 }
 function fillRecipeFromPaste(){
  const text=document.getElementById('recipePaste').value.trim();
