@@ -13,16 +13,24 @@ body{margin:0;background:var(--cream);font-family:Arial,sans-serif;color:#34382d
 header{background:var(--green);color:white;padding:25px 20px;border-radius:0 0 25px 25px}
 header h1{margin:0;font-family:Georgia,serif;font-size:29px}
 header p{margin:7px 0 0;color:#e5e8db}
-main{padding:18px;max-width:650px;margin:auto}
-h2{font-family:Georgia,serif;color:var(--green)}
+main{padding:18px;max-width:700px;margin:auto;padding-bottom:30px}
+h2,h3{font-family:Georgia,serif;color:var(--green)}
 .card{background:white;border-radius:17px;padding:17px;margin:13px 0;box-shadow:0 2px 10px #0000000b}
 button{background:var(--green);color:white;border:0;border-radius:12px;padding:12px 15px;font-size:15px;margin:5px 3px;cursor:pointer}
 button.light{background:var(--light);color:var(--green)}
-input,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin:6px 0 12px;font-size:16px}
-nav{position:sticky;bottom:0;background:var(--cream);display:flex;overflow-x:auto;padding:9px 4px;border-top:1px solid #ddd}
+button.active{background:#343d2a}
+input,select,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;margin:6px 0 12px;font-size:16px;background:white;color:#34382d}
+textarea{min-height:85px}
+label{font-size:14px;font-weight:600}
+nav{position:sticky;bottom:0;background:var(--cream);display:flex;overflow-x:auto;padding:9px 4px;border-top:1px solid #ddd;z-index:5}
 nav button{font-size:12px;min-width:85px;padding:10px 6px;margin:2px}
-.item{padding:10px 0;border-bottom:1px solid #eee}
+.item{padding:12px 0;border-bottom:1px solid #eee}
 .small{color:#777;font-size:13px}
+.tabs{display:flex;gap:5px;overflow-x:auto;margin:12px 0}
+.tabs button{white-space:nowrap;flex:1}
+.empty{color:#888;font-style:italic;padding:12px 0}
+a{color:var(--green);overflow-wrap:anywhere}
+.pill{display:inline-block;background:var(--light);color:var(--green);padding:5px 9px;border-radius:20px;font-size:12px}
 </style>
 </head>
 <body>
@@ -41,48 +49,105 @@ nav button{font-size:12px;min-width:85px;padding:10px 6px;margin:2px}
 <button onclick="page('settings')">⚙️ Réglages</button>
 </nav>
 <script>
-const get=(k,d)=>JSON.parse(localStorage.getItem(k)||JSON.stringify(d));
+const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
-let stock=get('stock',[]), shopping=get('shopping',[]), recipes=get('recipes',[]), plans=get('plans',{});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let stock=get('stock',[]),shopping=get('shopping',[]),recipes=get('recipes',[]),plans=get('plans',{});
+let stockPlace='Placard',stockSearch='';
+const places=['Placard','Réfrigérateur','Congélateur'];
+const categories=['Entrée','Plat','Dessert','Apéritif'];
+
 function page(p){
 const app=document.getElementById('app');
 if(p==='home'){
 app.innerHTML=`<h2>Que mange-t-on aujourd'hui ?</h2>
-<div class="card"><h3>☀️ Déjeuner</h3><p>${plans.lunch||'Aucun repas prévu'}</p></div>
-<div class="card"><h3>🌙 Dîner</h3><p>${plans.dinner||'Aucun repas prévu'}</p></div>
+<div class="card"><h3>☀️ Déjeuner</h3><p>${esc(plans.lunch)||'Aucun repas prévu'}</p></div>
+<div class="card"><h3>🌙 Dîner</h3><p>${esc(plans.dinner)||'Aucun repas prévu'}</p></div>
 <div class="card"><h3>✨ Une idée au hasard ?</h3><p>Découvrons une recette déjà enregistrée !</p><button onclick="randomRecipe()">Trouver une idée</button><p id="random"></p></div>
-<div class="card"><h3>🌿 Notre cuisine</h3><p>${stock.length} produit(s) dans l'inventaire</p><p>${shopping.length} article(s) dans la liste de courses</p><p>${recipes.length} recette(s) enregistrée(s)</p></div>`;
+<div class="card"><h3>🌿 Notre cuisine</h3><p>${stock.length} produit(s) en stock</p><p>${shopping.length} article(s) dans les courses</p><p>${recipes.length} recette(s) enregistrée(s)</p></div>`;
 }
-if(p==='stock'){
-app.innerHTML=`<h2>🥕 Inventaire</h2><div class="card"><h3>Ajouter un produit</h3>
-<label>Nom du produit</label><input id="product" placeholder="Ex : Lait">
-<label>Emplacement</label><select id="place"><option>Réfrigérateur</option><option>Congélateur</option><option>Placard</option></select>
-<label>Quantité</label><input id="quantity" placeholder="Ex : 2 bouteilles">
-<label>Date limite (facultatif)</label><input id="expiry" type="date">
-<button onclick="addStock()">Ajouter à l'inventaire</button></div>
-<div class="card"><h3>Mes produits</h3>${stock.map((x,i)=>`<div class="item"><b>${x.name}</b> — ${x.quantity}<br><span class="small">${x.place} ${x.expiry?'· Date : '+x.expiry:''}</span><button class="light" onclick="removeStock(${i})">Supprimer</button></div>`).join('')||'Ton inventaire est vide pour le moment.'}</div>`;
-}
+if(p==='stock'){renderStock()}
 if(p==='shopping'){
-app.innerHTML=`<h2>🛒 Liste de courses</h2><div class="card"><input id="buy" placeholder="Ajouter un article"><button onclick="addBuy()">Ajouter</button></div><div class="card">${shopping.map((x,i)=>`<div class="item"><label><input type="checkbox" style="width:auto" onchange="checkBuy(${i})" ${x.done?'checked':''}> ${x.name}</label></div>`).join('')||'Aucun article pour le moment.'}</div>`;
+app.innerHTML=`<h2>🛒 Liste de courses</h2>
+<div class="card"><h3>Ajouter un article</h3><input id="buy" placeholder="Ex : Pain, lait, œufs"><button onclick="addBuy()">Ajouter</button></div>
+<div class="card"><h3>Ma liste</h3>${shopping.map((x,i)=>`<div class="item"><label><input type="checkbox" style="width:auto" onchange="checkBuy(${i})" ${x.done?'checked':''}> ${esc(x.name)}</label><button class="light" onclick="removeBuy(${i})">Supprimer</button></div>`).join('')||'<p class="empty">Aucun article pour le moment.</p>'}</div>`;
 }
-if(p==='recipes'){
-app.innerHTML=`<h2>🍲 Nos recettes</h2><div class="card"><h3>Ajouter une recette</h3><input id="rname" placeholder="Nom de la recette"><select id="category"><option>Entrée</option><option>Plat</option><option>Dessert</option><option>Apéritif</option></select><textarea id="ingredients" placeholder="Ingrédients nécessaires" style="width:100%;height:80px;padding:10px;border-radius:10px"></textarea><button onclick="addRecipe()">Enregistrer la recette</button></div><div class="card"><h3>Recettes enregistrées</h3>${recipes.map(x=>`<div class="item"><b>${x.name}</b><br><span class="small">${x.category} · ${x.ingredients}</span></div>`).join('')||'Ajoutons ensemble tes premières recettes !'}</div>`;
-}
+if(p==='recipes'){renderRecipes()}
 if(p==='planning'){
-app.innerHTML=`<h2>📅 Planning des repas</h2><div class="card"><label>Déjeuner</label><input id="lunch" value="${plans.lunch||''}" placeholder="Repas du midi"><label>Dîner</label><input id="dinner" value="${plans.dinner||''}" placeholder="Repas du soir"><button onclick="savePlans()">Enregistrer la journée</button></div>`;
+app.innerHTML=`<h2>📅 Planning des repas</h2><div class="card"><label>Déjeuner</label><input id="lunch" value="${esc(plans.lunch||'')}" placeholder="Repas du midi"><label>Dîner</label><input id="dinner" value="${esc(plans.dinner||'')}" placeholder="Repas du soir"><button onclick="savePlans()">Enregistrer la journée</button></div>`;
 }
 if(p==='alerts'){
-app.innerHTML=`<h2>🔔 Alertes</h2><div class="card"><p>Les produits proches de leur date limite :</p>${stock.filter(x=>x.expiry&&x.expiry<=new Date(Date.now()+3*86400000).toISOString().slice(0,10)).map(x=>`<p>⚠️ ${x.name} — ${x.expiry}</p>`).join('')||'Aucune alerte pour le moment.'}<p class="small">Les notifications automatiques seront ajoutées dans une prochaine étape.</p></div>`;
+const soon=new Date(Date.now()+3*86400000).toISOString().slice(0,10);
+app.innerHTML=`<h2>🔔 Alertes</h2><div class="card"><h3>Produits proches de leur date</h3>${stock.filter(x=>x.expiry&&x.expiry<=soon).map(x=>`<p>⚠️ ${esc(x.name)} — ${esc(x.expiry)}</p>`).join('')||'<p class="empty">Aucune alerte pour le moment.</p>'}<p class="small">Les notifications automatiques seront ajoutées ultérieurement.</p></div>`;
 }
 if(p==='settings'){
-app.innerHTML=`<h2>⚙️ Paramètres</h2><div class="card"><p>🌿 Notre Cuisine</p><p class="small">Application familiale en construction.</p><p>Les données de cette première version sont enregistrées sur cet appareil uniquement.</p></div>`;
+app.innerHTML=`<h2>⚙️ Paramètres</h2><div class="card"><p>🌿 Notre Cuisine</p><p>Application familiale en construction.</p><p class="small">Cette version enregistre les données dans le navigateur utilisé. Elles ne sont pas encore partagées entre vos appareils.</p></div>`;
 }
 }
-function addStock(){let name=document.getElementById('product').value.trim();if(!name)return;stock.push({name,place:document.getElementById('place').value,quantity:document.getElementById('quantity').value,expiry:document.getElementById('expiry').value});save('stock',stock);page('stock')}
-function removeStock(i){stock.splice(i,1);save('stock',stock);page('stock')}
+
+function renderStock(){
+const app=document.getElementById('app');
+const shown=stock.filter(x=>(x.place||'Réfrigérateur')===stockPlace&&x.name.toLowerCase().includes(stockSearch.toLowerCase()));
+app.innerHTML=`<h2>🥕 Mon inventaire</h2>
+<div class="tabs">${places.map(x=>`<button class="${stockPlace===x?'active':''}" onclick="stockPlace='${x}';renderStock()">${x==='Placard'?'🥫':x==='Réfrigérateur'?'🥛':'❄️'} ${x}</button>`).join('')}</div>
+<div class="card"><h3>Ajouter un aliment</h3>
+<label>Nom du produit</label><input id="product" placeholder="Ex : Pâtes, lait, poulet...">
+<label>Quantité restante</label><input id="quantity" placeholder="Ex : 2 paquets, 500 g">
+<label>Date limite (facultatif)</label><input id="expiry" type="date">
+<button onclick="addStock()">Ajouter dans ${stockPlace.toLowerCase()}</button></div>
+<div class="card"><h3>🔎 Rechercher un produit</h3><input value="${esc(stockSearch)}" placeholder="Rechercher un aliment..." oninput="stockSearch=this.value;renderStockKeepFocus(this.value)" id="stockSearch">
+<h3>${stockPlace}</h3>
+${shown.map(x=>{let i=stock.indexOf(x);return `<div class="item"><b>${esc(x.name)}</b><br><span class="small">${esc(x.quantity||'Quantité non précisée')} ${x.expiry?'· Date : '+esc(x.expiry):''}</span>
+<label class="small">Déplacer vers :</label><select onchange="moveStock(${i},this.value)">${places.map(pl=>`<option ${pl===(x.place||'Réfrigérateur')?'selected':''}>${pl}</option>`).join('')}</select>
+<button class="light" onclick="removeStock(${i})">Supprimer</button></div>`}).join('')||'<p class="empty">Aucun produit dans cet espace.</p>'}</div>`;
+}
+function renderStockKeepFocus(value){
+let el=document.getElementById('stockSearch');let pos=el.selectionStart;renderStock();let next=document.getElementById('stockSearch');next.focus();next.setSelectionRange(pos,pos);
+}
+function addStock(){
+let name=document.getElementById('product').value.trim();if(!name)return;
+stock.push({name,place:stockPlace,quantity:document.getElementById('quantity').value,expiry:document.getElementById('expiry').value});
+save('stock',stock);stockSearch='';renderStock();
+}
+function removeStock(i){stock.splice(i,1);save('stock',stock);renderStock()}
+function moveStock(i,place){stock[i].place=place;save('stock',stock);renderStock()}
 function addBuy(){let name=document.getElementById('buy').value.trim();if(!name)return;shopping.push({name,done:false});save('shopping',shopping);page('shopping')}
+function removeBuy(i){shopping.splice(i,1);save('shopping',shopping);page('shopping')}
 function checkBuy(i){shopping[i].done=!shopping[i].done;save('shopping',shopping);page('shopping')}
-function addRecipe(){let name=document.getElementById('rname').value.trim();if(!name)return;recipes.push({name,category:document.getElementById('category').value,ingredients:document.getElementById('ingredients').value});save('recipes',recipes);page('recipes')}
+function renderRecipes(){
+const app=document.getElementById('app');
+app.innerHTML=`<h2>🍲 Nos recettes</h2>
+<div class="card"><h3>🌐 Ajouter depuis Internet</h3>
+<p class="small">Colle le lien d'une recette Marmiton ou d'un autre site. Ouvre-la pour consulter les ingrédients, puis complète la fiche ci-dessous.</p>
+<label>Lien de la recette</label><input id="recipeUrl" type="url" placeholder="https://www.marmiton.org/...">
+<button class="light" onclick="openRecipeLink()">Ouvrir le lien</button>
+<h3>Enregistrer la recette</h3>
+<label>Nom de la recette</label><input id="rname" placeholder="Ex : Welsh traditionnel">
+<label>Catégorie</label><select id="category">${categories.map(x=>`<option>${x}</option>`).join('')}</select>
+<label>Ingrédients</label><textarea id="ingredients" placeholder="Un ingrédient par ligne"></textarea>
+<label>Préparation</label><textarea id="preparation" placeholder="Décris les étapes de préparation"></textarea>
+<label>Nombre de personnes</label><input id="servings" type="number" min="1" value="3">
+<button onclick="addRecipe()">Enregistrer dans mes recettes</button></div>
+<div class="card"><h3>📖 Ma bibliothèque</h3>
+${recipes.map((x,i)=>`<div class="item"><b>${esc(x.name)}</b> <span class="pill">${esc(x.category)}</span>
+<p class="small">${esc(x.ingredients||'Ingrédients non renseignés')}</p>
+${x.url?`<a href="${esc(x.url)}" target="_blank" rel="noopener">Voir la recette originale</a>`:''}
+${x.preparation?`<details><summary>Voir la préparation</summary><p>${esc(x.preparation)}</p></details>`:''}
+<button class="light" onclick="deleteRecipe(${i})">Supprimer</button></div>`).join('')||'<p class="empty">Aucune recette enregistrée pour le moment.</p>'}</div>`;
+}
+function openRecipeLink(){
+let url=document.getElementById('recipeUrl').value.trim();
+if(!url)return alert('Ajoute d’abord le lien de la recette.');
+try{let u=new URL(url);if(!['http:','https:'].includes(u.protocol))throw new Error();window.open(u.href,'_blank','noopener')}catch(e){alert('Vérifie que le lien commence par https://')}
+}
+function addRecipe(){
+let name=document.getElementById('rname').value.trim();if(!name)return alert('Ajoute le nom de la recette.');
+let url=document.getElementById('recipeUrl').value.trim();
+if(url){try{let u=new URL(url);if(!['http:','https:'].includes(u.protocol))throw new Error();url=u.href}catch(e){return alert('Le lien de la recette ne semble pas valide.')}}
+recipes.push({name,category:document.getElementById('category').value,ingredients:document.getElementById('ingredients').value,preparation:document.getElementById('preparation').value,servings:document.getElementById('servings').value,url});
+save('recipes',recipes);page('recipes');
+}
+function deleteRecipe(i){recipes.splice(i,1);save('recipes',recipes);page('recipes')}
 function savePlans(){plans={lunch:document.getElementById('lunch').value,dinner:document.getElementById('dinner').value};save('plans',plans);page('planning')}
 function randomRecipe(){let r=recipes.length?recipes[Math.floor(Math.random()*recipes.length)].name:'Ajoute d’abord quelques recettes !';document.getElementById('random').textContent=r}
 page('home');
