@@ -127,7 +127,7 @@ app.innerHTML=`<h2>🥕 Mon inventaire</h2>
 <label>Nom du produit</label><input id="product" placeholder="Ex : Pâtes, lait, poulet...">
 <label>Quantité restante</label><input id="quantity" placeholder="Ex : 2 paquets, 500 g">
 <label>Date limite (facultatif)</label><input id="expiry" type="date">
-<button onclick="addStock()">Ajouter dans ${stockPlace.toLowerCase()}</button></div>
+<button onclick="addStock()">Ajouter dans ${stockPlace.toLowerCase()}</button></div><div class="card"><h3>📄 Importer mes achats (facture PDF)</h3><p class="small">Sélectionne une facture PDF. Les produits seront préremplis pour vérification avant ajout. Aucun prix n'est conservé.</p><input id="purchasePdf" type="file" accept="application/pdf"><button onclick="readPurchasePdf()">Lire la facture PDF</button><p id="purchasePdfStatus" class="small" role="status"></p><div id="purchasePdfPreview"></div></div>
 <div class="card"><h3>🔎 Rechercher un produit</h3><input value="${esc(stockSearch)}" placeholder="Rechercher un aliment..." oninput="stockSearch=this.value;renderStockKeepFocus(this.value)" id="stockSearch">
 <h3>${stockPlace}</h3>
 ${shown.map(x=>{let i=stock.indexOf(x);return `<div class="item"><b>${esc(x.name)}</b><br><span class="small">${esc(x.quantity||'Quantité non précisée')} ${x.expiry?'· Date : '+esc(x.expiry):''}</span>
@@ -611,6 +611,62 @@ function addWeeklyIngredients(){
 }
 
 /* page initiale remplacée par l'initialisation sécurisée */
+
+// Import facture PDF Auchan Drive (prix volontairement ignorés)
+let parsedPurchaseItems=[];
+async function ensurePdfJs(){
+ if(window.pdfjsLib)return window.pdfjsLib;
+ await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';s.type='module';s.onload=resolve;s.onerror=()=>reject(new Error('Chargement du lecteur PDF impossible.'));document.head.appendChild(s);});
+ // Module PDF.js is exposed via a module script shim to ensure browser support.
+ if(!window.pdfjsLib){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.type='module';s.textContent="import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs'; window.pdfjsLib=pdfjsLib; window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';";document.head.appendChild(s);setTimeout(()=>window.pdfjsLib?resolve():reject(new Error('Lecteur PDF non initialisé.')),1000);});}
+ return window.pdfjsLib;
+}
+function parseAuchanInvoiceText(text){
+ const lines=String(text||'').split(/\n/).map(s=>s.replace(/\s+/g,' ').trim()).filter(Boolean),out=[];
+ for(let i=0;i<lines.length;i++){
+  const line=lines[i];
+  const m=line.match(/^(\d{13})\s+(.+?)\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})?\s+(\d+)\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})\s+(\d+[.,]\d{2})$/);
+  if(!m)continue;
+  const barcode=m[1],name=m[2].trim(),qty=Number(m[5]);
+  if(!name||!qty||out.some(x=>x.barcode===barcode))continue;
+  // Le format Auchan fournit le conditionnement dans le libellé (ex. 500 g); ne garder aucun prix.
+  out.push({barcode,name,qty,pack:extractPack(name),checked:true});
+ }
+ return out;
+}
+function extractPack(name){const m=String(name).match(/\b(\d+(?:[.,]\d+)?\s?(?:kg|g|l|cl|ml|pcs?|pièces?|bouteilles?))\b/i);return m?m[1].replace(',','.'):''}
+async function readPurchasePdf(){
+ const file=document.getElementById('purchasePdf')?.files?.[0],status=document.getElementById('purchasePdfStatus'),preview=document.getElementById('purchasePdfPreview');
+ if(!file){status.textContent='Sélectionne d’abord ta facture PDF.';return}
+ status.textContent='Lecture du PDF…';preview.innerHTML='';
+ try{
+  const pdfjs=await ensurePdfJs();const bytes=await file.arrayBuffer();const doc=await pdfjs.getDocument({data:bytes}).promise;let text='';
+  for(let p=1;p<=doc.numPages;p++){const page=await doc.getPage(p),content=await page.getTextContent();text+=content.items.map(x=>x.str).join(' ')+'\n';}
+  parsedPurchaseItems=parseAuchanInvoiceText(text);
+  if(!parsedPurchaseItems.length){status.textContent='Aucun article reconnu automatiquement. Essaie un PDF texte (non scanné) ou copie-colle le détail de facture dans un futur import.';return}
+  status.textContent=parsedPurchaseItems.length+' article(s) détecté(s). Vérifie la sélection avant ajout.';
+  preview.innerHTML='<h4>Articles détectés (prix exclus)</h4>'+parsedPurchaseItems.map((x,i)=>'<div class="item"><label><input type="checkbox" style="width:auto" '+(x.checked?'checked':'')+' onchange="parsedPurchaseItems['+i+'].checked=this.checked"> '+esc(x.name)+'</label><p class="small">Code-barres : '+esc(x.barcode)+' · '+(x.pack?'Format : '+esc(x.pack)+' · ':'')+'Quantité achetée : <input style="max-width:90px;display:inline-block" type="number" min="1" value="'+x.qty+'" onchange="parsedPurchaseItems['+i+'].qty=Math.max(1,Number(this.value)||1)"></p></div>').join('')+'<button onclick="confirmPurchaseImport()">Ajouter les articles sélectionnés au stock</button>';
+ }catch(e){status.textContent='Lecture impossible : '+(e.message||'Erreur PDF');}
+}
+function normalizePurchaseName(n){return String(n||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function guessStockPlace(name){const n=normalizePurchaseName(name);if(/glace|surgel|congele/.test(n))return 'Congélateur';if(/lait|fromage|emmental|jambon|viande|poulet|creme|yaourt|oeuf|beurre|charcut|saumon/.test(n))return 'Réfrigérateur';return 'Placard'}
+function confirmPurchaseImport(){
+ const chosen=parsedPurchaseItems.filter(x=>x.checked&&x.qty>0);if(!chosen.length)return alert('Sélectionne au moins un article.');
+ let added=0,merged=0;
+ chosen.forEach(x=>{
+  const existing=stock.find(s=>(x.barcode&&s.barcode===x.barcode)||normalizePurchaseName(s.name)===normalizePurchaseName(x.name));
+  const qText=x.pack?x.qty+' × '+x.pack:String(x.qty)+' unité(s)';
+  if(existing){existing.barcode=existing.barcode||x.barcode;existing.quantity=mergePurchaseQuantity(existing.quantity,x.qty,x.pack);merged++}
+  else stock.push({name:x.name,barcode:x.barcode,place:guessStockPlace(x.name),quantity:qText,expiry:''});
+  added++;
+ });
+ save('stock',stock);stockSearch='';renderStock();alert(added+' article(s) ajouté(s) au stock ('+merged+' fusionné(s) avec un produit existant).');
+}
+function mergePurchaseQuantity(oldValue,qty,pack){
+ const old=String(oldValue||'').trim();const m=old.match(/^(\d+)\s*(?:×|x)?\s*(.*)$/i);
+ if(m&&(!pack||!m[2]||normalizePurchaseName(m[2])===normalizePurchaseName(pack)))return (Number(m[1])+qty)+' × '+(pack||m[2]||'unité(s)');
+ return old+' + '+(pack?qty+' × '+pack:qty+' unité(s)');
+}
 </script>
 
 <script>
