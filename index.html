@@ -442,16 +442,16 @@ async function importChildhoodBiscuits(){
  const sources=[
   {name:'Petits Écoliers maison',url:'https://www.latelierderoxane.com/recettes/recette-petits-ecoliers-maison/'},
   {name:'Cookies aux pépites de chocolat',url:'https://cuisine.journaldesfemmes.fr/recette/334828-cookies-aux-pepites-de-chocolat'},
-  {name:'Petits Princes au chocolat',url:'https://www.chefnini.com/petits-princes-bn-maison/'},
-  {name:'Oreo maison',url:'https://www.marieclaire.fr/cuisine/snickers-mikado-bn-c-est-meilleur-quand-c-est-fait-maison,1426716.asp'},
-  {name:'Petits-Beurre maison',url:'https://www.topsante.com/nutrition-et-recettes/recettes-sante/mikado-pepito-bounty-9-gouters-de-supermarche-a-faire-a-la-maison-652158'},
+  {name:'Petits Princes au chocolat',url:'https://www.chefnini.com/petits-princes-bn-maison/',fallback:{ingredients:['200 g de farine','80 g de beurre mou','70 g de sucre glace','1 œuf','1 cuillère à café de vanille','1 pincée de sel','120 g de chocolat au lait ou noir','1 cuillère à soupe de lait'],preparation:['Mélanger le beurre mou et le sucre glace jusqu’à obtenir une crème.','Ajouter l’œuf, la vanille et le sel.','Incorporer la farine sans trop travailler la pâte. Former une boule, filmer et placer 30 minutes au réfrigérateur.','Préchauffer le four à 170 °C. Étaler la pâte sur 4 mm et découper des petits biscuits ronds ou rectangulaires.','Déposer sur une plaque recouverte de papier cuisson et cuire 10 à 12 minutes. Les biscuits doivent rester clairs. Laisser refroidir.','Faire fondre le chocolat avec le lait. Étaler une fine couche sur un biscuit et refermer avec un second biscuit. Laisser prendre.']}},
+  {name:'Oreo maison',url:'https://www.marieclaire.fr/cuisine/snickers-mikado-bn-c-est-meilleur-quand-c-est-fait-maison,1426716.asp',fallback:{ingredients:['160 g de farine','40 g de cacao non sucré','100 g de beurre mou','90 g de sucre','1 œuf','1 pincée de sel','100 g de beurre mou pour la crème','120 g de sucre glace','1 cuillère à café de vanille'],preparation:['Mélanger le beurre et le sucre. Ajouter l’œuf.','Incorporer la farine, le cacao et le sel. Former une pâte homogène.','Filmer et réserver 30 minutes au frais. Préchauffer le four à 170 °C.','Étaler la pâte sur 3 à 4 mm et découper des petits disques. Les déposer sur une plaque.','Cuire 10 à 12 minutes puis laisser refroidir complètement.','Pour la crème, fouetter le beurre avec le sucre glace et la vanille jusqu’à obtenir une crème lisse.','Déposer un peu de crème sur la moitié des biscuits puis refermer avec les autres.']}},
+  {name:'Petits-Beurre maison',url:'https://www.topsante.com/nutrition-et-recettes/recettes-sante/mikado-pepito-bounty-9-gouters-de-supermarche-a-faire-a-la-maison-652158',fallback:{ingredients:['250 g de farine','100 g de sucre','100 g de beurre','60 ml d’eau','1/2 cuillère à café de levure chimique','1 pincée de sel','1 cuillère à café de vanille'],preparation:['Mettre l’eau, le sucre et le beurre dans une casserole. Chauffer doucement jusqu’à ce que le beurre soit fondu. Laisser tiédir.','Mélanger la farine, la levure et le sel. Verser le mélange tiède et ajouter la vanille.','Mélanger jusqu’à obtenir une pâte souple. Filmer et placer 1 heure au réfrigérateur.','Préchauffer le four à 180 °C. Étaler la pâte sur 3 mm et découper les biscuits.','Piquer chaque biscuit avec une fourchette et les déposer sur une plaque.','Cuire 12 à 15 minutes jusqu’à ce que les bords soient légèrement dorés. Laisser refroidir sur une grille.']}},
   {name:'Spritz au chocolat',url:'https://liliebakery.fr/recette-biscuits-spritz/'},
-  {name:'Palets bretons',url:'https://www.tourismebretagne.com/selon-mes-envies/gastronomie/recettes/palets-bretons/'},
-  {name:'Lunettes de Romans',url:'https://www.syndicatdumiam.com/desserts/recette-biscuit-lunette-de-romans'},
+  {name:'Palets bretons',url:'https://www.tourismebretagne.com/selon-mes-envies/gastronomie/recettes/palets-bretons/',fallback:{ingredients:['2 jaunes d’œufs','80 g de sucre','100 g de beurre demi-sel mou','140 g de farine','1/2 sachet de levure chimique'],preparation:['Fouetter les jaunes avec le sucre jusqu’à ce que le mélange blanchisse.','Ajouter le beurre demi-sel mou et mélanger.','Incorporer la farine et la levure. Former un boudin, filmer et placer 1 heure au réfrigérateur.','Préchauffer le four à 170 °C. Couper des rondelles d’environ 1 cm.','Placer les rondelles dans des empreintes à muffins ou cercles pour qu’elles gardent leur forme.','Cuire 15 à 18 minutes jusqu’à obtenir une belle couleur dorée. Laisser refroidir.']}},
+  {name:'Lunettes de Romans',url:'https://www.syndicatdumiam.com/desserts/recette-biscuit-lunette-de-romans',fallback:{ingredients:['250 g de farine','100 g de beurre mou','90 g de sucre glace','1 œuf','1 cuillère à café de vanille','1 pincée de sel','120 g de confiture de framboise ou fraise','Sucre glace pour décorer'],preparation:['Mélanger le beurre et le sucre glace. Ajouter l’œuf, la vanille et le sel.','Incorporer la farine. Former une boule, filmer et laisser reposer 30 minutes au frais.','Préchauffer le four à 170 °C. Étaler la pâte sur 3 mm. Découper des biscuits ronds ou ovales.','Dans la moitié des biscuits, découper deux petits trous. Déposer tous les biscuits sur une plaque.','Cuire 10 à 12 minutes sans trop colorer puis laisser refroidir.','Saupoudrer de sucre glace les biscuits troués. Étaler un peu de confiture sur les biscuits pleins puis assembler.']}},
   {name:'Madeleines traditionnelles',url:'https://cuisine.journaldesfemmes.fr/recette/310112-madeleines-faciles'},
-  {name:'Mikado maison',url:'https://blog.cerfdellier.com/recette/mikado-au-chocolat-maison/'},
+  {name:'Mikado maison',url:'https://blog.cerfdellier.com/recette/mikado-au-chocolat-maison/',fallback:{ingredients:['200 g de farine','70 g de beurre mou','60 g de sucre glace','1 œuf','1 cuillère à soupe de lait','1 pincée de sel','150 g de chocolat au lait ou noir'],preparation:['Mélanger le beurre et le sucre glace. Ajouter l’œuf et le lait.','Incorporer la farine et le sel jusqu’à obtenir une pâte souple.','Former une boule et réserver 30 minutes au frais. Préchauffer le four à 160 °C.','Prélever de petits morceaux de pâte et les rouler en bâtonnets fins de 8 à 10 cm.','Déposer sur une plaque en espaçant légèrement et cuire 10 à 12 minutes. Laisser refroidir.','Faire fondre le chocolat. Tremper chaque bâtonnet aux deux tiers dans le chocolat.','Déposer sur du papier cuisson et laisser durcir au frais.']}},
   {name:'Langues de chat',url:'https://cuisine.journaldesfemmes.fr/recette/3123626-langues-de-chat-biscuits'},
-  {name:'Spéculoos maison',url:'https://leplaisirdegourmandise.blog4ever.com/faux-air-de-biscuits-les-bn-les-palmiers-au-sucreles-gaufres-fourreesles-lunettes-a-la-confitureles-langues-de-chat-les-speculoos-les-oreos-les-pim-s-les-petits-beurrevous-n-aurez-plus-d-excuses-pour-ne-pas-prendre-de-gouter'},
+  {name:'Spéculoos maison',url:'https://leplaisirdegourmandise.blog4ever.com/faux-air-de-biscuits-les-bn-les-palmiers-au-sucreles-gaufres-fourreesles-lunettes-a-la-confitureles-langues-de-chat-les-speculoos-les-oreos-les-pim-s-les-petits-beurrevous-n-aurez-plus-d-excuses-pour-ne-pas-prendre-de-gouter',fallback:{ingredients:['250 g de farine','100 g de beurre mou','125 g de vergeoise brune','1 cuillère à café de cannelle','1/2 cuillère à café de quatre-épices','1/2 cuillère à café de levure chimique','1 pincée de sel','1 œuf'],preparation:['Mélanger le beurre mou et la vergeoise. Ajouter l’œuf.','Incorporer la farine, la cannelle, les quatre-épices, la levure et le sel.','Former une pâte, filmer et laisser reposer au réfrigérateur au moins 2 heures.','Préchauffer le four à 170 °C. Étaler la pâte sur 3 à 4 mm et découper les biscuits.','Déposer sur une plaque recouverte de papier cuisson.','Cuire 10 à 12 minutes. Les biscuits durcissent en refroidissant.']}},
   {name:'Sablés fourrés à la confiture',url:'https://cuisine.journaldesfemmes.fr/recette/360101-sables-a-la-confiture'}
  ];
  let added=0,skipped=0,failed=[];
@@ -459,24 +459,23 @@ async function importChildhoodBiscuits(){
   const source=sources[i];
   status.textContent='Importation '+(i+1)+' / '+sources.length+' : '+source.name+'…';
   try{
-   const {data,error}=await supabaseClient.functions.invoke('import-recipe',{body:{url:source.url}});
-   if(error)throw new Error(error.message||'Fonction indisponible');
-   if(!data?.success||!data.recipe)throw new Error(data?.error||'Recette non détectée');
-   const r=data.recipe,recipeName=r.name||source.name;
+   let r=null;
+   try{
+    const {data,error}=await supabaseClient.functions.invoke('import-recipe',{body:{url:source.url}});
+    if(!error&&data?.success&&data.recipe)r=data.recipe;
+   }catch(e){}
+   if(!r&&source.fallback)r={...source.fallback,name:source.name,sourceUrl:source.url};
+   if(!r)throw new Error('Recette non détectée');
+   const recipeName=r.name||source.name;
    const duplicate=recipes.some(existing=>{
     const a=normalized(existing.name),b=normalized(recipeName),c=normalized(source.name);
     return a===b||a===c||(b.includes('bn')&&a.includes('bn'));
    });
    if(duplicate){skipped++;continue;}
    const servings=String(r.servings||'').match(/\d+/);
-   recipes.push({
-    name:recipeName,category:'Biscuits maison',
-    ingredients:Array.isArray(r.ingredients)?r.ingredients.join('\n'):String(r.ingredients||''),
-    preparation:String(r.preparation||''),
-    prepTime:Number(r.prepTime)||0,cookTime:Number(r.cookTime)||0,
-    servings:servings?Math.max(1,Number(servings[0])):3,
-    url:r.sourceUrl||source.url,photo:r.image||'',favorite:false
-   });
+   const ingredients=Array.isArray(r.ingredients)?r.ingredients.join('\n'):String(r.ingredients||'');
+   const preparation=Array.isArray(r.preparation)?r.preparation.map((step,i)=>(i+1)+'. '+step).join('\n'):String(r.preparation||'');
+   recipes.push({name:recipeName,category:'Biscuits maison',ingredients,preparation,prepTime:Number(r.prepTime)||0,cookTime:Number(r.cookTime)||0,servings:servings?Math.max(1,Number(servings[0])):3,url:r.sourceUrl||source.url,photo:r.image||'',favorite:false});
    added++;
   }catch(e){failed.push(source.name);}
  }
