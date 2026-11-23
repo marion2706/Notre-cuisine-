@@ -60,9 +60,12 @@ const categories=['Entrée','Plat','Dessert','Apéritif'];
 function page(p){
 const app=document.getElementById('app');
 if(p==='home'){
+const todayPlan=getDayPlan(todayKey());
+const lunchToday=todayPlan.lunch?.name||'Aucun repas prévu';
+const dinnerToday=todayPlan.dinner?.name||'Aucun repas prévu';
 app.innerHTML=`<h2>Que mange-t-on aujourd'hui ?</h2>
-<div class="card"><h3>☀️ Déjeuner</h3><p>${esc(plans.lunch)||'Aucun repas prévu'}</p></div>
-<div class="card"><h3>🌙 Dîner</h3><p>${esc(plans.dinner)||'Aucun repas prévu'}</p></div>
+<div class="card"><h3>☀️ Déjeuner</h3><p>${esc(lunchToday)}</p></div>
+<div class="card"><h3>🌙 Dîner</h3><p>${esc(dinnerToday)}</p></div>
 <div class="card"><h3>✨ Une idée au hasard ?</h3><p>Découvrons une recette déjà enregistrée !</p><button onclick="randomRecipe()">Trouver une idée</button><p id="random"></p></div>
 <div class="card"><h3>🌿 Notre cuisine</h3><p>${stock.length} produit(s) en stock</p><p>${shopping.length} article(s) dans les courses</p><p>${recipes.length} recette(s) enregistrée(s)</p></div>`;
 }
@@ -73,9 +76,8 @@ app.innerHTML=`<h2>🛒 Liste de courses</h2>
 <div class="card"><h3>Ma liste</h3>${shopping.map((x,i)=>`<div class="item"><label><input type="checkbox" style="width:auto" onchange="checkBuy(${i})" ${x.done?'checked':''}> ${esc(x.name)}</label><button class="light" onclick="removeBuy(${i})">Supprimer</button></div>`).join('')||'<p class="empty">Aucun article pour le moment.</p>'}</div>`;
 }
 if(p==='recipes'){renderRecipes()}
-if(p==='planning'){
-app.innerHTML=`<h2>📅 Planning des repas</h2><div class="card"><label>Déjeuner</label><input id="lunch" value="${esc(plans.lunch||'')}" placeholder="Repas du midi"><label>Dîner</label><input id="dinner" value="${esc(plans.dinner||'')}" placeholder="Repas du soir"><button onclick="savePlans()">Enregistrer la journée</button></div>`;
-}
+if(p==='planning'){renderPlanning()}
+
 if(p==='alerts'){
 const soon=new Date(Date.now()+3*86400000).toISOString().slice(0,10);
 app.innerHTML=`<h2>🔔 Alertes</h2><div class="card"><h3>Produits proches de leur date</h3>${stock.filter(x=>x.expiry&&x.expiry<=soon).map(x=>`<p>⚠️ ${esc(x.name)} — ${esc(x.expiry)}</p>`).join('')||'<p class="empty">Aucune alerte pour le moment.</p>'}<p class="small">Les notifications automatiques seront ajoutées ultérieurement.</p></div>`;
@@ -148,7 +150,101 @@ recipes.push({name,category:document.getElementById('category').value,ingredient
 save('recipes',recipes);page('recipes');
 }
 function deleteRecipe(i){recipes.splice(i,1);save('recipes',recipes);page('recipes')}
-function savePlans(){plans={lunch:document.getElementById('lunch').value,dinner:document.getElementById('dinner').value};save('plans',plans);page('planning')}
+// Planning hebdomadaire : chaque repas est associé à une date et à une recette.
+let planningWeekOffset=0;
+function dateKey(date){return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')}
+function todayKey(){return dateKey(new Date())}
+function getDayPlan(key){return plans[key]||{lunch:null,dinner:null}}
+function weekStart(offset=0){
+ const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);return d;
+}
+function formatDay(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}
+function renderPlanning(){
+ const app=document.getElementById('app');const start=weekStart(planningWeekOffset);
+ const end=new Date(start);end.setDate(end.getDate()+6);
+ const days=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(d.getDate()+i);return d});
+ app.innerHTML=`<h2>📅 Planning de la semaine</h2>
+ <div class="card">
+ <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+ <button class="light" onclick="changePlanningWeek(-1)">← Semaine précédente</button>
+ <b>${start.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})} – ${end.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'})}</b>
+ <button class="light" onclick="changePlanningWeek(1)">Semaine suivante →</button>
+ </div><button class="light" onclick="planningWeekOffset=0;renderPlanning()">Aujourd'hui</button>
+ <p class="small">Choisis une recette enregistrée ou saisis un repas libre. Les portions sont réglées à 3 personnes par défaut.</p>
+ </div>
+ ${days.map(d=>{const key=dateKey(d);const day=getDayPlan(key);return `
+ <div class="card">
+ <h3 style="text-transform:capitalize">${formatDay(d)}</h3>
+ ${renderMealEditor(key,'lunch','☀️ Déjeuner',day.lunch)}
+ ${renderMealEditor(key,'dinner','🌙 Dîner',day.dinner)}
+ </div>`}).join('')}
+ <div class="card"><h3>🛒 Courses de la semaine</h3>
+ <p class="small">Les ingrédients des recettes prévues sont regroupés ici. Tu peux les ajouter à ta liste de courses.</p>
+ <div id="weeklyIngredients">${weeklyIngredientsHtml(start)}</div>
+ <button onclick="addWeeklyIngredients()">Ajouter les ingrédients à ma liste de courses</button>
+ </div>`;
+}
+function renderMealEditor(key,slot,label,meal){
+ const recipeOptions=recipes.map((r,i)=>`<option value="${i}" ${meal?.recipeIndex===i?'selected':''}>${esc(r.name)}</option>`).join('');
+ const custom=meal?.custom||(!meal?.recipeIndex&&meal?.name&&!recipes.some(r=>r.name===meal.name));
+ return `<div class="item"><b>${label}</b>
+ <label>Recette enregistrée</label>
+ <select id="${key}-${slot}-recipe" onchange="selectPlannedRecipe('${key}','${slot}',this.value)">
+ <option value="">Choisir une recette…</option>${recipeOptions}<option value="custom" ${custom?'selected':''}>Autre repas / saisie libre</option>
+ </select>
+ <div id="${key}-${slot}-custom" ${custom?'':'hidden'}>
+ <label>Nom du repas</label><input id="${key}-${slot}-name" value="${esc(custom?meal?.name||'':'')}" placeholder="Ex : Salade composée">
+ </div>
+ <label>Nombre de personnes</label>
+ <input id="${key}-${slot}-servings" type="number" min="1" max="20" value="${meal?.servings||3}">
+ <button onclick="savePlannedMeal('${key}','${slot}')">Enregistrer</button>
+ ${meal?'<button class="light" onclick="clearPlannedMeal(\''+key+'\',\''+slot+'\')">Supprimer ce repas</button>':''}
+ </div>`;
+}
+function changePlanningWeek(delta){planningWeekOffset+=delta;renderPlanning()}
+function selectPlannedRecipe(key,slot,value){
+ const custom=document.getElementById(key+'-'+slot+'-custom');
+ if(custom)custom.hidden=value!=='custom';
+ if(value!=='custom'&&value!==''){
+  const recipe=recipes[Number(value)];
+  const servings=document.getElementById(key+'-'+slot+'-servings');
+  if(servings&&recipe?.servings)servings.value=3;
+ }
+}
+function savePlannedMeal(key,slot){
+ const select=document.getElementById(key+'-'+slot+'-recipe');
+ const servings=Math.max(1,Number(document.getElementById(key+'-'+slot+'-servings').value)||3);
+ let meal=null;
+ if(select.value==='custom'){
+  const name=document.getElementById(key+'-'+slot+'-name').value.trim();
+  if(!name)return alert('Indique le nom du repas.');
+  meal={name,custom:true,servings};
+ }else if(select.value!==''){
+  const index=Number(select.value);const recipe=recipes[index];
+  if(!recipe)return alert('Cette recette n’existe plus.');
+  meal={name:recipe.name,recipeIndex:index,ingredients:recipe.ingredients||'',recipeServings:Number(recipe.servings)||3,servings};
+ }else{
+  return alert('Choisis une recette ou sélectionne « Autre repas ».');
+ }
+ if(!plans[key]||!plans[key].lunch&&!plans[key].dinner)plans[key]={lunch:null,dinner:null};
+ plans[key][slot]=meal;save('plans',plans);renderPlanning();
+}
+function clearPlannedMeal(key,slot){if(plans[key]){plans[key][slot]=null;save('plans',plans)}renderPlanning()}
+function weeklyMeals(start){
+ const out=[];for(let i=0;i<7;i++){const d=new Date(start);d.setDate(d.getDate()+i);const day=getDayPlan(dateKey(d));['lunch','dinner'].forEach(slot=>{if(day[slot]?.ingredients)out.push({name:day[slot].name,ingredients:day[slot].ingredients,servings:day[slot].servings||3,recipeServings:day[slot].recipeServings||3})})}return out;
+}
+function weeklyIngredientLines(start){
+ const lines=[];weeklyMeals(start).forEach(meal=>meal.ingredients.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean).forEach(item=>lines.push(item)));
+ return [...new Set(lines)];
+}
+function weeklyIngredientsHtml(start){
+ const lines=weeklyIngredientLines(start);return lines.length?'<ul>'+lines.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p class="empty">Ajoute des recettes au planning pour voir les ingrédients nécessaires.</p>';
+}
+function addWeeklyIngredients(){
+ const lines=weeklyIngredientLines(weekStart(planningWeekOffset));let added=0;
+ lines.forEach(name=>{if(!shopping.some(x=>x.name.toLowerCase()===name.toLowerCase()&&!x.done)){shopping.push({name,done:false});added++}});
+ save('shopping',shopping);alert(added+' ingrédient(s) ajouté(s) à la liste de courses.');page('shopping');
+}
 function randomRecipe(){let r=recipes.length?recipes[Math.floor(Math.random()*recipes.length)].name:'Ajoute d’abord quelques recettes !';document.getElementById('random').textContent=r}
 page('home');
 </script>
