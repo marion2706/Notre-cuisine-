@@ -393,7 +393,7 @@ function renderRecipes(){
  const filtered=recipes.map((r,i)=>({...r,_i:i})).filter(r=>(recipeCategoryFilter==='Toutes'||r.category===recipeCategoryFilter)&&(!showFavoritesOnly||r.favorite)&&normalized(r.name+' '+r.ingredients).includes(normalized(recipeSearchText)));
  app.innerHTML='<h2>🍲 Nos recettes</h2>'+
  '<div class="card"><h3>🥕 Que cuisiner avec mes réserves ?</h3><p>Je compare les ingrédients de tes recettes avec les aliments des placards, du réfrigérateur et du congélateur.</p><button onclick="findRecipesFromStock()">✨ Trouver des recettes avec mon stock</button><div id="stockRecipeResults"></div></div>'+
- '<div class="card"><details><summary style="color:var(--green);font-weight:700;font-size:18px;cursor:pointer;padding:5px 0">＋ Ajouter une recette</summary><div style="padding-top:14px"><p class="small">Ajoute une photo via un lien d’image, les ingrédients avec quantités (un par ligne), et les étapes.</p><label>Lien de la recette originale (facultatif)</label><input id="recipeUrl" type="url" placeholder="https://…"><button class="light" type="button" onclick="openRecipeLink()">🔗 Ouvrir la recette</button><label>Copie-colle ici le texte de la recette trouvé sur le site</label><textarea id="recipePaste" placeholder="Colle le texte complet de la recette ici…"></textarea><button class="light" type="button" onclick="fillRecipeFromPaste()">📥 Importer la recette à partir du texte copié</button><p id="recipeImportStatus" class="mini">L’import automatique des sites n’est pas fiable sur téléphone. Cette méthode fonctionne sans déploiement Supabase.</p><label>Nom de la recette</label><input id="rname" placeholder="Ex : Welsh traditionnel"><label>Catégorie</label><select id="category">'+categories.map(x=>'<option>'+x+'</option>').join('')+'</select><label>Photo (URL d’image facultative)</label><input id="rphoto" type="url" placeholder="https://…jpg"><label>Ingrédients (un par ligne, avec quantité)</label><textarea id="ingredients" placeholder="200 g de farine&#10;3 œufs&#10;20 cl de lait"></textarea><label>Préparation</label><textarea id="preparation" placeholder="Décris les étapes de préparation"></textarea><label>Temps de préparation (minutes)</label><input id="prepTime" type="number" min="0" placeholder="Ex. 15"><label>Temps de cuisson (minutes)</label><input id="cookTime" type="number" min="0" placeholder="Ex. 30"><label>Nombre de personnes pour les quantités indiquées</label><input id="servings" type="number" min="1" value="'+get('defaultPeople',3)+'"><button onclick="addRecipe()">Enregistrer dans mes recettes</button></div></details></div>'+
+ '<div class="card"><details><summary style="color:var(--green);font-weight:700;font-size:18px;cursor:pointer;padding:5px 0">＋ Ajouter une recette</summary><div style="padding-top:14px"><p class="small">Ajoute une photo via un lien d’image, les ingrédients avec quantités (un par ligne), et les étapes.</p><label>Lien de la recette originale (facultatif)</label><input id="recipeUrl" type="url" placeholder="https://…"><button class="light" type="button" onclick="openRecipeLink()">🔗 Ouvrir la recette</button><button type="button" onclick="importRecipeFromUrl()">📥 Importer automatiquement depuis ce lien</button><p id="recipeImportStatus" class="mini">Colle un lien de recette puis lance l’importation. Vérifie la fiche avant de l’enregistrer.</p><label>Nom de la recette</label><input id="rname" placeholder="Ex : Welsh traditionnel"><label>Catégorie</label><select id="category">'+categories.map(x=>'<option>'+x+'</option>').join('')+'</select><label>Photo (URL d’image facultative)</label><input id="rphoto" type="url" placeholder="https://…jpg"><label>Ingrédients (un par ligne, avec quantité)</label><textarea id="ingredients" placeholder="200 g de farine&#10;3 œufs&#10;20 cl de lait"></textarea><label>Préparation</label><textarea id="preparation" placeholder="Décris les étapes de préparation"></textarea><label>Temps de préparation (minutes)</label><input id="prepTime" type="number" min="0" placeholder="Ex. 15"><label>Temps de cuisson (minutes)</label><input id="cookTime" type="number" min="0" placeholder="Ex. 30"><label>Nombre de personnes pour les quantités indiquées</label><input id="servings" type="number" min="1" value="'+get('defaultPeople',3)+'"><button onclick="addRecipe()">Enregistrer dans mes recettes</button></div></details></div>'+
  '<div class="card"><h3>📖 Ma bibliothèque</h3><input placeholder="Rechercher une recette ou un ingrédient…" value="'+esc(recipeSearchText)+'" oninput="recipeSearchText=this.value;renderRecipesKeepFocus()"><div class="tabs"><button class="'+(recipeCategoryFilter==='Toutes'?'active':'light')+'" onclick="recipeCategoryFilter=\'Toutes\';renderRecipes()">Toutes</button>'+categories.map(c=>'<button class="'+(recipeCategoryFilter===c?'active':'light')+'" onclick="recipeCategoryFilter=\''+c+'\';renderRecipes()">'+c+'</button>').join('')+'<button class="'+(showFavoritesOnly?'active':'light')+'" onclick="showFavoritesOnly=!showFavoritesOnly;renderRecipes()">♥ Favoris</button></div>'+
  (filtered.length?'<div class="recipe-grid">'+filtered.map(r=>'<div class="recipe-card">'+(r.photo?'<img src="'+esc(r.photo)+'" alt="Photo de '+esc(r.name)+'" onerror="this.style.display=\'none\'">':'<div style="height:90px;background:#eef0e7;display:grid;place-items:center;font-size:34px">🍲</div>')+'<div class="inside"><b>'+esc(r.name)+'</b><p class="mini">'+esc(r.category)+' · '+(r.servings||3)+' pers.</p><button class="light" onclick="toggleFavorite('+r._i+')">'+(r.favorite?'♥ Favori':'♡ Ajouter aux favoris')+'</button><button class="light" onclick="window.showRecipe('+r._i+')">Voir la recette</button><button class="light" onclick="editRecipe('+r._i+')">Modifier</button><button class="light" onclick="deleteRecipe('+r._i+')">Supprimer</button></div></div>').join('')+'</div>':'<p class="empty">Aucune recette ne correspond à cette recherche.</p>')+'</div>';
 }
@@ -403,6 +403,38 @@ function openRecipeLink(){
  if(!url)return alert('Colle d’abord le lien de la recette.');
  try{const u=new URL(url);if(!['http:','https:'].includes(u.protocol))throw 0;window.open(u.href,'_blank','noopener')}
  catch(e){alert('Vérifie que le lien commence par https://')}
+}
+async function importRecipeFromUrl(){
+ const url=document.getElementById('recipeUrl').value.trim();
+ const status=document.getElementById('recipeImportStatus');
+ if(!url){status.textContent='Colle d’abord le lien de la recette.';return}
+ try{
+  const parsed=new URL(url);
+  if(!['http:','https:'].includes(parsed.protocol))throw new Error('Le lien doit commencer par https://');
+ }catch(e){status.textContent=e.message||'Le lien n’est pas valide.';return}
+ const button=document.querySelector('button[onclick="importRecipeFromUrl()"]');
+ if(button){button.disabled=true;button.textContent='Importation en cours…'}
+ status.textContent='Lecture de la recette depuis le site…';
+ try{
+  const {data,error}=await supabaseClient.functions.invoke('import-recipe',{body:{url}});
+  if(error)throw new Error(error.message||'La fonction Supabase n’a pas répondu.');
+  if(!data||!data.success||!data.recipe)throw new Error(data?.error||'Aucune recette exploitable trouvée.');
+  const r=data.recipe;
+  if(r.name)document.getElementById('rname').value=r.name;
+  if(Array.isArray(r.ingredients))document.getElementById('ingredients').value=r.ingredients.join('\n');
+  if(r.preparation)document.getElementById('preparation').value=r.preparation;
+  if(r.image)document.getElementById('rphoto').value=r.image;
+  if(Number(r.prepTime))document.getElementById('prepTime').value=Number(r.prepTime);
+  if(Number(r.cookTime))document.getElementById('cookTime').value=Number(r.cookTime);
+  const servings=String(r.servings||'').match(/\d+/);
+  if(servings)document.getElementById('servings').value=servings[0];
+  document.getElementById('recipeUrl').value=r.sourceUrl||url;
+  status.textContent='Recette importée ! Vérifie les quantités, les étapes et la catégorie, puis clique sur « Enregistrer dans mes recettes ».';
+ }catch(e){
+  status.textContent='Importation impossible : '+(e.message||'Erreur inconnue')+'. Certains sites bloquent la lecture automatique.';
+ }finally{
+  if(button){button.disabled=false;button.textContent='📥 Importer automatiquement depuis ce lien'}
+ }
 }
 function fillRecipeFromPaste(){
  const text=document.getElementById('recipePaste').value.trim();
