@@ -629,9 +629,12 @@ async function initializeCloudApp(){
   }else{
     await writeCloudData();
   }
+  // Retire aussi de la base partagée les recettes régionales déjà enregistrées.
+  const recipeCountBeforeCleanup=recipes.length;
+  recipes=recipes.filter(r=>!r.regionalCollection);
+  saveLocalCloudData();
   window.cloudReady=true;
-  const regionalUpdated=refreshRegionalRecipes();
-  if(regionalUpdated>0) await writeCloudData();
+  if(recipes.length!==recipeCountBeforeCleanup) await writeCloudData();
   document.body.classList.add('connected');
   document.getElementById('auth-screen').style.display='none';
   page('home');
