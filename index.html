@@ -278,15 +278,15 @@ function page(p){
   const day=todayPlanData(),l=day.lunch,d=day.dinner;
   const near=stock.filter(x=>x.expiry&&x.expiry<=new Date(Date.now()+3*86400000).toISOString().slice(0,10));
   app.innerHTML='<h2>Que mange-t-on aujourd’hui ?</h2>'+
-   '<div class="card"><h3>☀️ Déjeuner</h3><b>'+esc(l?.name||'Aucun repas prévu')+'</b><p><button class="light" onclick="page(\\'planning\\')">Voir le planning</button></p></div>'+
-   '<div class="card"><h3>🌙 Dîner</h3><b>'+esc(d?.name||'Aucun repas prévu')+'</b><p><button class="light" onclick="page(\\'planning\\')">Voir le planning</button></p></div>'+
+   '<div class="card"><h3>☀️ Déjeuner</h3><b>'+esc(l?.name||'Aucun repas prévu')+'</b><p><button class="light" onclick="page(\'planning\')">Voir le planning</button></p></div>'+
+   '<div class="card"><h3>🌙 Dîner</h3><b>'+esc(d?.name||'Aucun repas prévu')+'</b><p><button class="light" onclick="page(\'planning\')">Voir le planning</button></p></div>'+
    '<div class="card"><h3>✨ Une idée au hasard ?</h3><p>Une recette de votre bibliothèque, en tenant compte des produits disponibles.</p><button onclick="randomRecipe()">Trouver une idée</button><div id="random"></div></div>'+
    '<div class="recipe-grid">'+
-   '<div class="card" onclick="page(\\'stock\\')">🥕 <b>Inventaire</b><p class="mini">'+stock.length+' produit(s)</p></div>'+
-   '<div class="card" onclick="page(\\'shopping\\')">🛒 <b>Courses</b><p class="mini">'+shopping.filter(x=>!x.done).length+' article(s) à acheter</p></div>'+
-   '<div class="card" onclick="page(\\'recipes\\')">🍲 <b>Recettes</b><p class="mini">'+recipes.length+' recette(s)</p></div>'+
-   '<div class="card" onclick="page(\\'planning\\')">📅 <b>Planning</b><p class="mini">Organiser la semaine</p></div></div>'+
-   '<div class="card"><h3>🔔 À ne pas oublier</h3><p>'+near.length+' produit(s) à consommer rapidement.</p><button class="light" onclick="page(\\'alerts\\')">Voir mes alertes</button></div>';
+   '<div class="card" onclick="page(\'stock\')">🥕 <b>Inventaire</b><p class="mini">'+stock.length+' produit(s)</p></div>'+
+   '<div class="card" onclick="page(\'shopping\')">🛒 <b>Courses</b><p class="mini">'+shopping.filter(x=>!x.done).length+' article(s) à acheter</p></div>'+
+   '<div class="card" onclick="page(\'recipes\')">🍲 <b>Recettes</b><p class="mini">'+recipes.length+' recette(s)</p></div>'+
+   '<div class="card" onclick="page(\'planning\')">📅 <b>Planning</b><p class="mini">Organiser la semaine</p></div></div>'+
+   '<div class="card"><h3>🔔 À ne pas oublier</h3><p>'+near.length+' produit(s) à consommer rapidement.</p><button class="light" onclick="page(\'alerts\')">Voir mes alertes</button></div>';
  }
  if(p==='stock')renderStock();
  if(p==='shopping')renderShopping();
@@ -309,7 +309,7 @@ function saveDefaultPeople(){const n=Math.max(1,Number(document.getElementById('
 function renderStock(){
  const app=document.getElementById('app');
  const shown=stock.filter(x=>(x.place||'Réfrigérateur')===stockPlace&&x.name.toLowerCase().includes(stockSearch.toLowerCase()));
- app.innerHTML='<h2>🥕 Mon inventaire</h2><div class="tabs">'+places.map(x=>'<button class="'+(stockPlace===x?'active':'light')+'" onclick="stockPlace=\\''+x+'\\';renderStock()">'+(x==='Placard'?'🥫':x==='Réfrigérateur'?'🥛':'❄️')+' '+x+'</button>').join('')+'</div>'+
+ app.innerHTML='<h2>🥕 Mon inventaire</h2><div class="tabs">'+places.map(x=>'<button class="'+(stockPlace===x?'active':'light')+'" onclick="stockPlace=\''+x+'\';renderStock()">'+(x==='Placard'?'🥫':x==='Réfrigérateur'?'🥛':'❄️')+' '+x+'</button>').join('')+'</div>'+
  '<div class="card"><h3>Ajouter un aliment</h3><label>Nom du produit</label><input id="product" placeholder="Ex : Pâtes, lait, poulet…"><label>Quantité / conditionnement</label><input id="quantity" placeholder="Ex : 2 paquets, 500 g, pack de 6"><label>Date limite (facultatif)</label><input id="expiry" type="date"><label>Code-barres (facultatif)</label><div style="display:flex;gap:6px"><input id="barcode" placeholder="Code-barres" style="flex:1"><button class="light" onclick="scanBarcode()">📷 Scanner</button></div><video id="barcodeVideo" playsinline hidden style="width:100%;border-radius:12px"></video><button onclick="addStock()">Ajouter dans '+stockPlace.toLowerCase()+'</button><p class="mini">Le scan lit le code. Le nom du produit reste à saisir pour le moment.</p></div>'+
  '<div class="card"><h3>🔎 Rechercher</h3><input value="'+esc(stockSearch)+'" placeholder="Rechercher un aliment…" oninput="stockSearch=this.value;renderStockKeepFocus(this.value)" id="stockSearch"><h3>'+stockPlace+'</h3>'+
  (shown.map(x=>{let i=stock.indexOf(x);return '<div class="item"><b>'+esc(x.name)+'</b><br><span class="small">'+esc(x.quantity||'Quantité non précisée')+(x.expiry?' · Date : '+esc(x.expiry):'')+(x.barcode?' · Code : '+esc(x.barcode):'')+'</span><label class="small">Déplacer vers :</label><select onchange="moveStock('+i+',this.value)">'+places.map(pl=>'<option '+(pl===(x.place||'Réfrigérateur')?'selected':'')+'>'+pl+'</option>').join('')+'</select><button class="light" onclick="consumeStock('+i+')">Produit terminé</button><button class="light" onclick="removeStock('+i+')">Supprimer</button></div>'}).join('')||'<p class="empty">Aucun produit dans cet espace.</p>')+'</div>';
@@ -334,8 +334,8 @@ function renderRecipes(){
  const app=document.getElementById('app');
  const filtered=recipes.map((r,i)=>({...r,_i:i})).filter(r=>(recipeCategoryFilter==='Toutes'||r.category===recipeCategoryFilter)&&(!showFavoritesOnly||r.favorite)&&normalized(r.name+' '+r.ingredients).includes(normalized(recipeSearchText)));
  app.innerHTML='<h2>🍲 Nos recettes</h2><div class="card"><h3>Ajouter une recette</h3><p class="small">Ajoute une photo via un lien d’image, les ingrédients avec quantités (un par ligne), et les étapes.</p><label>Lien de la recette originale (facultatif)</label><input id="recipeUrl" type="url" placeholder="https://…"><label>Nom de la recette</label><input id="rname" placeholder="Ex : Welsh traditionnel"><label>Catégorie</label><select id="category">'+categories.map(x=>'<option>'+x+'</option>').join('')+'</select><label>Photo (URL d’image facultative)</label><input id="rphoto" type="url" placeholder="https://…jpg"><label>Ingrédients (un par ligne, avec quantité)</label><textarea id="ingredients" placeholder="200 g de farine&#10;3 œufs&#10;20 cl de lait"></textarea><label>Préparation</label><textarea id="preparation" placeholder="Décris les étapes de préparation"></textarea><label>Nombre de personnes pour les quantités indiquées</label><input id="servings" type="number" min="1" value="'+get('defaultPeople',3)+'"><button onclick="addRecipe()">Enregistrer dans mes recettes</button></div>'+
- '<div class="card"><h3>📖 Ma bibliothèque</h3><input placeholder="Rechercher une recette ou un ingrédient…" value="'+esc(recipeSearchText)+'" oninput="recipeSearchText=this.value;renderRecipesKeepFocus()"><div class="tabs"><button class="'+(recipeCategoryFilter==='Toutes'?'active':'light')+'" onclick="recipeCategoryFilter=\\'Toutes\\';renderRecipes()">Toutes</button>'+categories.map(c=>'<button class="'+(recipeCategoryFilter===c?'active':'light')+'" onclick="recipeCategoryFilter=\\''+c+'\\';renderRecipes()">'+c+'</button>').join('')+'<button class="'+(showFavoritesOnly?'active':'light')+'" onclick="showFavoritesOnly=!showFavoritesOnly;renderRecipes()">♥ Favoris</button></div>'+
- (filtered.length?'<div class="recipe-grid">'+filtered.map(r=>'<div class="recipe-card">'+(r.photo?'<img src="'+esc(r.photo)+'" alt="Photo de '+esc(r.name)+'" onerror="this.style.display=\\'none\\'">':'<div style="height:90px;background:#eef0e7;display:grid;place-items:center;font-size:34px">🍲</div>')+'<div class="inside"><b>'+esc(r.name)+'</b><p class="mini">'+esc(r.category)+' · '+(r.servings||3)+' pers.</p><button class="light" onclick="toggleFavorite('+r._i+')">'+(r.favorite?'♥ Favori':'♡ Ajouter aux favoris')+'</button><button class="light" onclick="showRecipe('+r._i+')">Voir la recette</button><button class="light" onclick="editRecipe('+r._i+')">Modifier</button><button class="light" onclick="deleteRecipe('+r._i+')">Supprimer</button></div></div>').join('')+'</div>':'<p class="empty">Aucune recette ne correspond à cette recherche.</p>')+'</div>';
+ '<div class="card"><h3>📖 Ma bibliothèque</h3><input placeholder="Rechercher une recette ou un ingrédient…" value="'+esc(recipeSearchText)+'" oninput="recipeSearchText=this.value;renderRecipesKeepFocus()"><div class="tabs"><button class="'+(recipeCategoryFilter==='Toutes'?'active':'light')+'" onclick="recipeCategoryFilter=\'Toutes\';renderRecipes()">Toutes</button>'+categories.map(c=>'<button class="'+(recipeCategoryFilter===c?'active':'light')+'" onclick="recipeCategoryFilter=\''+c+'\';renderRecipes()">'+c+'</button>').join('')+'<button class="'+(showFavoritesOnly?'active':'light')+'" onclick="showFavoritesOnly=!showFavoritesOnly;renderRecipes()">♥ Favoris</button></div>'+
+ (filtered.length?'<div class="recipe-grid">'+filtered.map(r=>'<div class="recipe-card">'+(r.photo?'<img src="'+esc(r.photo)+'" alt="Photo de '+esc(r.name)+'" onerror="this.style.display=\'none\'">':'<div style="height:90px;background:#eef0e7;display:grid;place-items:center;font-size:34px">🍲</div>')+'<div class="inside"><b>'+esc(r.name)+'</b><p class="mini">'+esc(r.category)+' · '+(r.servings||3)+' pers.</p><button class="light" onclick="toggleFavorite('+r._i+')">'+(r.favorite?'♥ Favori':'♡ Ajouter aux favoris')+'</button><button class="light" onclick="showRecipe('+r._i+')">Voir la recette</button><button class="light" onclick="editRecipe('+r._i+')">Modifier</button><button class="light" onclick="deleteRecipe('+r._i+')">Supprimer</button></div></div>').join('')+'</div>':'<p class="empty">Aucune recette ne correspond à cette recherche.</p>')+'</div>';
 }
 function renderRecipesKeepFocus(){const el=document.querySelector('.card input[placeholder^="Rechercher une recette"]');const pos=el?.selectionStart;renderRecipes();const next=document.querySelector('.card input[placeholder^="Rechercher une recette"]');if(next){next.focus();next.setSelectionRange(pos,pos)}}
 function addRecipe(){
@@ -348,13 +348,13 @@ function addRecipe(){
 function showRecipe(i){
  const r=recipes[i];if(!r)return;
  const app=document.getElementById('app');
- app.innerHTML='<button class="light" onclick="page(\\'recipes\\')">← Retour aux recettes</button><div class="card">'+(r.photo?'<img src="'+esc(r.photo)+'" style="width:100%;max-height:230px;object-fit:cover;border-radius:12px">':'')+'<h2>'+esc(r.name)+'</h2><span class="pill">'+esc(r.category)+'</span><p class="small">Pour '+(r.servings||3)+' personne(s)</p><h3>Ingrédients</h3><p>'+esc(r.ingredients||'Non renseignés').replace(/\\n/g,'<br>')+'</p><h3>Préparation</h3><p>'+esc(r.preparation||'Non renseignée').replace(/\\n/g,'<br>')+'</p>'+(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">Consulter la recette originale</a>':'')+'<p><button onclick="addRecipeIngredients('+i+')">Ajouter les ingrédients aux courses</button><button class="light" onclick="editRecipe('+i+')">Modifier</button></p></div>';
+ app.innerHTML='<button class="light" onclick="page(\'recipes\')">← Retour aux recettes</button><div class="card">'+(r.photo?'<img src="'+esc(r.photo)+'" style="width:100%;max-height:230px;object-fit:cover;border-radius:12px">':'')+'<h2>'+esc(r.name)+'</h2><span class="pill">'+esc(r.category)+'</span><p class="small">Pour '+(r.servings||3)+' personne(s)</p><h3>Ingrédients</h3><p>'+esc(r.ingredients||'Non renseignés').replace(/\n/g,'<br>')+'</p><h3>Préparation</h3><p>'+esc(r.preparation||'Non renseignée').replace(/\n/g,'<br>')+'</p>'+(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">Consulter la recette originale</a>':'')+'<p><button onclick="addRecipeIngredients('+i+')">Ajouter les ingrédients aux courses</button><button class="light" onclick="editRecipe('+i+')">Modifier</button></p></div>';
 }
 function toggleFavorite(i){recipes[i].favorite=!recipes[i].favorite;save('recipes',recipes);renderRecipes()}
 function editRecipe(i){
  const r=recipes[i];if(!r)return;editingRecipe=i;
  const app=document.getElementById('app');
- app.innerHTML='<h2>Modifier la recette</h2><div class="card"><label>Nom</label><input id="editName" value="'+esc(r.name)+'"><label>Catégorie</label><select id="editCategory">'+categories.map(c=>'<option '+(c===r.category?'selected':'')+'>'+c+'</option>').join('')+'</select><label>Photo (URL)</label><input id="editPhoto" value="'+esc(r.photo||'')+'"><label>Lien original</label><input id="editUrl" value="'+esc(r.url||'')+'"><label>Ingrédients</label><textarea id="editIngredients">'+esc(r.ingredients||'')+'</textarea><label>Préparation</label><textarea id="editPreparation">'+esc(r.preparation||'')+'</textarea><label>Nombre de personnes</label><input id="editServings" type="number" min="1" value="'+(r.servings||3)+'"><button onclick="saveEditedRecipe()">Enregistrer</button><button class="light" onclick="page(\\'recipes\\')">Annuler</button></div>';
+ app.innerHTML='<h2>Modifier la recette</h2><div class="card"><label>Nom</label><input id="editName" value="'+esc(r.name)+'"><label>Catégorie</label><select id="editCategory">'+categories.map(c=>'<option '+(c===r.category?'selected':'')+'>'+c+'</option>').join('')+'</select><label>Photo (URL)</label><input id="editPhoto" value="'+esc(r.photo||'')+'"><label>Lien original</label><input id="editUrl" value="'+esc(r.url||'')+'"><label>Ingrédients</label><textarea id="editIngredients">'+esc(r.ingredients||'')+'</textarea><label>Préparation</label><textarea id="editPreparation">'+esc(r.preparation||'')+'</textarea><label>Nombre de personnes</label><input id="editServings" type="number" min="1" value="'+(r.servings||3)+'"><button onclick="saveEditedRecipe()">Enregistrer</button><button class="light" onclick="page(\'recipes\')">Annuler</button></div>';
 }
 function saveEditedRecipe(){
  const i=editingRecipe,r=recipes[i];if(!r)return;
@@ -363,7 +363,7 @@ function saveEditedRecipe(){
  save('recipes',recipes);editingRecipe=-1;renderRecipes();
 }
 function ingredientParts(line){
- const m=String(line).trim().match(/^([0-9]+(?:[.,][0-9]+)?(?:\\s*\\/\\s*[0-9]+)?)\\s*(kg|g|mg|l|cl|ml|piece|pieces|pce|pcs)?\\s*(?:de|d’|d')?\\s*(.+)$/i);
+ const m=String(line).trim().match(/^([0-9]+(?:[.,][0-9]+)?(?:\s*\/\s*[0-9]+)?)\s*(kg|g|mg|l|cl|ml|piece|pieces|pce|pcs)?\s*(?:de|d’|d')?\s*(.+)$/i);
  if(!m)return {name:String(line).trim(),amount:null,unit:''};
  let amount=m[1].includes('/')?m[1].split('/').reduce((a,b)=>a/Number(b),Number(m[1].split('/')[0])):Number(m[1].replace(',','.'));
  return {name:m[3].trim(),amount,unit:(m[2]||'').toLowerCase()};
@@ -373,7 +373,7 @@ function plannedIngredientNeeds(start){
  for(let day=0;day<7;day++){const d=new Date(start);d.setDate(d.getDate()+day);const plan=getDayPlan(dateKey(d));
  ['lunch','dinner'].forEach(slot=>{const meal=plan[slot];if(!meal?.ingredients)return;
   const ratio=(Number(meal.servings)||3)/(Number(meal.recipeServings)||3);
-  meal.ingredients.split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean).forEach(line=>{
+  meal.ingredients.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).forEach(line=>{
    const p=ingredientParts(line),key=normalized(p.name);if(!key)return;
    if(!needs[key])needs[key]={name:p.name,amount:0,unit:p.unit,hasAmount:false};
    if(p.amount!==null&&(!needs[key].unit||needs[key].unit===p.unit)){needs[key].amount+=p.amount*ratio;needs[key].hasAmount=true}
@@ -395,7 +395,7 @@ function addWeeklyIngredients(){
 }
 function addRecipeIngredients(i){
  const r=recipes[i];if(!r)return;let added=0;
- (r.ingredients||'').split(/\\r?\\n/).map(x=>x.trim()).filter(Boolean).forEach(line=>{const p=ingredientParts(line);if(!inventoryHas(p.name)&&!shopping.some(s=>normalized(s.name)===normalized(line)&&!s.done)){shopping.push({name:line,done:false});added++}});
+ (r.ingredients||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean).forEach(line=>{const p=ingredientParts(line);if(!inventoryHas(p.name)&&!shopping.some(s=>normalized(s.name)===normalized(line)&&!s.done)){shopping.push({name:line,done:false});added++}});
  save('shopping',shopping);alert(added+' ingrédient(s) ajouté(s).');page('shopping');
 }
 function renderMealEditor(key,slot,label,meal){
@@ -404,11 +404,11 @@ function renderMealEditor(key,slot,label,meal){
  const recipe=recipeForMeal(meal);
  return '<div class="meal-box"><b>'+label+'</b>'+
  (recipe?.photo?'<img src="'+esc(recipe.photo)+'" alt="Photo de '+esc(recipe.name)+'">':'')+
- '<label>Recette</label><select id="'+key+'-'+slot+'-recipe" onchange="selectPlannedRecipe(\\''+key+'\\',\\''+slot+'\\',this.value)"><option value="">Choisir une recette…</option>'+recipeOptions+'<option value="custom" '+(custom?'selected':'')+'>Autre repas / saisie libre</option></select>'+
+ '<label>Recette</label><select id="'+key+'-'+slot+'-recipe" onchange="selectPlannedRecipe(\''+key+'\',\''+slot+'\',this.value)"><option value="">Choisir une recette…</option>'+recipeOptions+'<option value="custom" '+(custom?'selected':'')+'>Autre repas / saisie libre</option></select>'+
  '<div id="'+key+'-'+slot+'-custom" '+(custom?'':'hidden')+'><label>Nom du repas</label><input id="'+key+'-'+slot+'-name" value="'+esc(custom?meal?.name||'':'')+'" placeholder="Ex : Salade composée"></div>'+
  '<label>Nombre de personnes</label><input id="'+key+'-'+slot+'-servings" type="number" min="1" max="20" value="'+(meal?.servings||get('defaultPeople',3))+'">'+
- '<button onclick="savePlannedMeal(\\''+key+'\\',\\''+slot+'\\')">Enregistrer</button>'+
- (meal?'<button class="light" onclick="clearPlannedMeal(\\''+key+'\\',\\''+slot+'\\')">Supprimer</button><div class="mini">Déplacer ce repas vers un autre jour :</div><input type="date" id="'+key+'-'+slot+'-move"><button class="light" onclick="movePlannedMeal(\\''+key+'\\',\\''+slot+'\\')">Déplacer</button><button class="light" onclick="showMealRecipe(\\''+key+'\\',\\''+slot+'\\')">Voir la recette</button>':'')+'</div>';
+ '<button onclick="savePlannedMeal(\''+key+'\',\''+slot+'\')">Enregistrer</button>'+
+ (meal?'<button class="light" onclick="clearPlannedMeal(\''+key+'\',\''+slot+'\')">Supprimer</button><div class="mini">Déplacer ce repas vers un autre jour :</div><input type="date" id="'+key+'-'+slot+'-move"><button class="light" onclick="movePlannedMeal(\''+key+'\',\''+slot+'\')">Déplacer</button><button class="light" onclick="showMealRecipe(\''+key+'\',\''+slot+'\')">Voir la recette</button>':'')+'</div>';
 }
 function selectPlannedRecipe(key,slot,value){const custom=document.getElementById(key+'-'+slot+'-custom');if(custom)custom.hidden=value!=='custom'}
 function savePlannedMeal(key,slot){
@@ -435,7 +435,7 @@ function renderPlanning(){
 function changePlanningWeek(delta){planningWeekOffset+=delta;renderPlanning()}
 function clearPlannedMeal(key,slot){if(plans[key]){plans[key][slot]=null;save('plans',plans)}renderPlanning()}
 function randomRecipe(){
- const available=recipes.filter(r=>(r.ingredients||'').split(/\\r?\\n/).filter(Boolean).every(line=>{const p=ingredientParts(line);return inventoryHas(p.name)}));
+ const available=recipes.filter(r=>(r.ingredients||'').split(/\r?\n/).filter(Boolean).every(line=>{const p=ingredientParts(line);return inventoryHas(p.name)}));
  const pool=available.length?available:recipes;
  const r=pool.length?pool[Math.floor(Math.random()*pool.length)]:null;
  const box=document.getElementById('random');if(!box)return;
