@@ -99,6 +99,9 @@ const places=['Placard','Réfrigérateur','Congélateur'];
 const categories=['Entrée','Plat','Dessert','Biscuits maison','Biscuits sans sucre','Apéritif'];
 let recipeCategoryFilter='Toutes';
 
+// Disponible dès le premier script : les recettes sans sucre l'utilisent pendant leur initialisation.
+function normalized(s){return String(s||'').toLocaleLowerCase('fr').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+
 function ensureNoAddedSugarRecipes(){
  const additions=[
   {sourceId:'sans-sucre-cookies-v1',contentVersion:3,name:'Cookies chocolat sans sucre ajouté',category:'Biscuits sans sucre',region:'',servings:6,prepTime:10,cookTime:12,photo:'',url:'',ingredients:'Farine de patate douce : 50 g\\nFarine de coco : 20 g\\nŒuf : 1 (environ 50 g sans coquille)\\nFromage blanc : 30 g\\nHuile de coco fondue : 40 g\\nChocolat noir 80 % : 30 g, coupé en pépites\\nLevure chimique : 2 g (1/2 cuillère à café rase)\\nStévia : dose indiquée sur le paquet pour remplacer 50 g de sucre\\nRendement : 6 cookies',preparation:'1. Préchauffer le four à 170 °C.\\n2. Faire fondre l’huile de coco et la laisser tiédir.\\n3. Mélanger l’œuf, le fromage blanc, l’huile fondue et la stévia.\\n4. Ajouter les deux farines et la levure. Mélanger : la pâte doit être épaisse et souple.\\n5. Incorporer les pépites de chocolat.\\n6. Diviser la pâte en 6 portions égales (environ 30 g chacune), former des boules puis les aplatir légèrement.\\n7. Cuire 10 à 12 minutes. Laisser refroidir 10 minutes sur la plaque avant de déplacer les cookies.'},
