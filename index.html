@@ -102,9 +102,9 @@ function ensureNoAddedSugarRecipes(){
  ];
  let changed=false;
  for(const recipe of additions){
-  if(!recipes.some(r=>r.sourceId===recipe.sourceId||normalized(r.name)===normalized(recipe.name))){
-   recipes.push(recipe);changed=true;
-  }
+  const existing=recipes.find(r=>r.sourceId===recipe.sourceId||normalized(r.name)===normalized(recipe.name));
+  if(!existing){recipes.push(recipe);changed=true;}
+  else if(existing.category!=='Biscuits sans sucre'){existing.category='Biscuits sans sucre';changed=true;}
  }
  if(changed)saveLocalCloudData();
  return changed;
