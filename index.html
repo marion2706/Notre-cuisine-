@@ -81,7 +81,8 @@ body:not(.connected) main,body:not(.connected) nav{display:none}
 <script>
 const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}};
 function save(k,v){localStorage.setItem(k,JSON.stringify(v));if(window.cloudReady)scheduleCloudSave();}
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));\nfunction ingredientLineFormat(line){
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function ingredientLineFormat(line){
  const s=String(line||'').trim().replace(/^[-•]+\\s*/,'');
  const m=s.match(/^(.+?)\\s*:\\s*(.+)$/);
  if(!m)return s;
