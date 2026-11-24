@@ -609,25 +609,54 @@ function addRecipeIngredients(i){
  save('shopping',shopping);alert(added+' ingrédient(s) ajouté(s).');page('shopping');
 }
 function renderMealEditor(key,slot,label,meal){
- const recipeOptions=recipes.map((r,i)=>'<option value="'+i+'" '+(meal?.recipeIndex===i?'selected':'')+'>'+esc(r.name)+'</option>').join('');
- const custom=meal?.custom;
- const recipe=recipeForMeal(meal);
+ const selectedExtras=Array.isArray(meal?.extraRecipeIndexes)?meal.extraRecipeIndexes:[];
+ const optionHtml=(selected)=>'<option value="">Choisir une recette…</option>'+recipes.map((r,i)=>'<option value="'+i+'" '+(selected===i?'selected':'')+'>'+esc(r.name)+'</option>').join('');
+ const custom=meal?.custom,recipe=recipeForMeal(meal);
+ const extrasHtml=selectedExtras.map((idx,n)=>'<div class="extra-recipe-row" style="display:flex;gap:6px;align-items:center;margin:6px 0"><select class="extra-recipe-select" style="flex:1;min-width:0">'+optionHtml(idx)+'</select><button type="button" class="light" onclick="this.parentElement.remove()" aria-label="Retirer cette recette">−</button></div>').join('');
  return '<div class="meal-box"><b>'+label+'</b>'+
  (recipe?.photo?'<img src="'+esc(recipe.photo)+'" alt="Photo de '+esc(recipe.name)+'">':'')+
- '<label>Recette</label><select id="'+key+'-'+slot+'-recipe" onchange="selectPlannedRecipe(\''+key+'\',\''+slot+'\',this.value)"><option value="">Choisir une recette…</option>'+recipeOptions+'<option value="custom" '+(custom?'selected':'')+'>Autre repas / saisie libre</option></select>'+
- '<div id="'+key+'-'+slot+'-custom" '+(custom?'':'hidden')+'><label>Nom du repas</label><input id="'+key+'-'+slot+'-name" value="'+esc(custom?meal?.name||'':'')+'" placeholder="Ex : Salade composée"></div>'+
+ '<label>Recette principale</label><select id="'+key+'-'+slot+'-recipe" onchange="selectPlannedRecipe(\''+key+'\',\''+slot+'\',this.value)">'+optionHtml(Number.isInteger(meal?.recipeIndex)?meal.recipeIndex:null)+'<option value="custom" '+(custom?'selected':'')+'>Autre repas / saisie libre</option></select>'+
+ '<div id="'+key+'-'+slot+'-custom" '+(custom?'':'hidden')+'><label>Nom du repas</label><input id="'+key+'-'+slot+'-name" value="'+esc(custom?meal?.name||'':'')+'" placeholder="Ex : Apéro dînatoire"></div>'+
+ '<div style="margin-top:10px"><b>Autres recettes pour ce repas</b><div id="'+key+'-'+slot+'-extras">'+extrasHtml+'</div><button type="button" class="light" onclick="addExtraRecipeField(\''+key+'\',\''+slot+'\')">＋ Ajouter une recette</button><p class="mini">Pratique pour un apéro dînatoire, une entrée + un plat ou plusieurs accompagnements.</p></div>'+
  '<label>Nombre de personnes</label><input id="'+key+'-'+slot+'-servings" type="number" min="1" max="20" value="'+(meal?.servings||get('defaultPeople',3))+'">'+
  '<button onclick="savePlannedMeal(\''+key+'\',\''+slot+'\')">Enregistrer</button>'+
- (meal?'<button class="light" onclick="clearPlannedMeal(\''+key+'\',\''+slot+'\')">Supprimer</button><div class="mini">Déplacer ce repas vers un autre jour :</div><input type="date" id="'+key+'-'+slot+'-move"><button class="light" onclick="movePlannedMeal(\''+key+'\',\''+slot+'\')">Déplacer</button><button class="light" onclick="showMealRecipe(\''+key+'\',\''+slot+'\')">Voir la recette</button>':'')+'</div>';
+ (meal?'<button class="light" onclick="clearPlannedMeal(\''+key+'\',\''+slot+'\')">Supprimer</button><div class="mini">Déplacer ce repas vers un autre jour :</div><input type="date" id="'+key+'-'+slot+'-move"><button class="light" onclick="movePlannedMeal(\''+key+'\',\''+slot+'\')">Déplacer</button><button class="light" onclick="showMealRecipe(\''+key+'\',\''+slot+'\')">Voir la recette principale</button>':'')+'</div>';
+}
+function addExtraRecipeField(key,slot){
+ const holder=document.getElementById(key+'-'+slot+'-extras');if(!holder)return;
+ const row=document.createElement('div');row.className='extra-recipe-row';row.style.cssText='display:flex;gap:6px;align-items:center;margin:6px 0';
+ const select=document.createElement('select');select.className='extra-recipe-select';select.style.cssText='flex:1;min-width:0';
+ select.innerHTML='<option value="">Choisir une recette…</option>'+recipes.map((r,i)=>'<option value="'+i+'">'+esc(r.name)+'</option>').join('');
+ const remove=document.createElement('button');remove.type='button';remove.className='light';remove.textContent='−';remove.setAttribute('aria-label','Retirer cette recette');remove.onclick=()=>row.remove();
+ row.append(select,remove);holder.appendChild(row);
 }
 function selectPlannedRecipe(key,slot,value){const custom=document.getElementById(key+'-'+slot+'-custom');if(custom)custom.hidden=value!=='custom'}
 function savePlannedMeal(key,slot){
  const select=document.getElementById(key+'-'+slot+'-recipe'),servings=Math.max(1,Number(document.getElementById(key+'-'+slot+'-servings').value)||3);
- let meal;
- if(select.value==='custom'){const name=document.getElementById(key+'-'+slot+'-name').value.trim();if(!name)return alert('Indique le nom du repas.');meal={name,custom:true,servings}}
- else if(select.value!==''){const index=Number(select.value),r=recipes[index];if(!r)return alert('Cette recette n’existe plus.');meal={name:r.name,recipeIndex:index,ingredients:r.ingredients||'',recipeServings:Number(r.servings)||3,servings}}
- else return alert('Choisis une recette ou sélectionne « Autre repas ».');
- if(!plans[key]||!plans[key].lunch&&!plans[key].dinner)plans[key]={lunch:null,dinner:null};
+ let meal,baseName='',allIngredients=[];
+ if(select.value==='custom'){
+  baseName=document.getElementById(key+'-'+slot+'-name').value.trim();if(!baseName)return alert('Indique le nom du repas.');
+  meal={name:baseName,custom:true,servings};
+ }else if(select.value!==''){
+  const index=Number(select.value),r=recipes[index];if(!r)return alert('Cette recette n’existe plus.');
+  baseName=r.name;meal={name:r.name,recipeIndex:index,recipeServings:Number(r.servings)||3,servings};
+  if(r.ingredients)allIngredients.push(r.ingredients);
+ }else return alert('Choisis une recette ou sélectionne « Autre repas ».');
+ const extraSelects=[...document.querySelectorAll('#'+key+'-'+slot+'-extras .extra-recipe-select')];
+ const extraIndexes=[];
+ for(const field of extraSelects){
+  if(field.value==='')continue;
+  const idx=Number(field.value),extra=recipes[idx];if(!extra)return alert('Une recette supplémentaire n’existe plus.');
+  if(extraIndexes.includes(idx))return alert('Cette recette est déjà ajoutée à ce repas.');
+  extraIndexes.push(idx);if(extra.ingredients)allIngredients.push(extra.ingredients);
+ }
+ if(extraIndexes.length){
+  meal.extraRecipeIndexes=extraIndexes;
+  meal.name=[baseName,...extraIndexes.map(i=>recipes[i].name)].join(' + ');
+  meal.ingredients=allIngredients.join('\n');
+  meal.recipeServings=Number(meal.recipeServings)||Number(recipes[extraIndexes[0]].servings)||3;
+ }else if(allIngredients.length)meal.ingredients=allIngredients.join('\n');
+ if(!plans[key])plans[key]={lunch:null,dinner:null};
  plans[key][slot]=meal;save('plans',plans);renderPlanning();
 }
 function movePlannedMeal(key,slot){
