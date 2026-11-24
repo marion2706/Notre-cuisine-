@@ -133,6 +133,8 @@ function ensureNoAddedSugarRecipes(){
 }
 
 
+window.ensureNoAddedSugarRecipes=ensureNoAddedSugarRecipes;
+
 function page(p){
 const app=document.getElementById('app');
 if(p==='home'){
@@ -878,7 +880,7 @@ async function initializeCloudApp(){
     }
     const recipeCountBeforeCleanup=recipes.length;
     recipes=recipes.filter(r=>!r.regionalCollection);
-    const addedNoSugarRecipes=ensureNoAddedSugarRecipes();
+    const addedNoSugarRecipes=window.ensureNoAddedSugarRecipes();
     saveLocalCloudData();
     window.cloudReady=true;
     if(recipes.length!==recipeCountBeforeCleanup||addedNoSugarRecipes) await writeCloudData();
