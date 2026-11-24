@@ -843,48 +843,56 @@ async function loginToApp(){
   if(error){showAuthMessage('Connexion impossible : vérifie ton e-mail et ton mot de passe.',true);return;}
   await initializeCloudApp();
 }
+async function cloudTimeout(promise,label){
+  return await Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' prend trop de temps. Vérifie la connexion puis réessaie.')),15000))]);
+}
 async function initializeCloudApp(){
   showAuthMessage('Chargement de votre cuisine…');
-  const {data:{user},error:authError}=await supabaseClient.auth.getUser();
-  if(authError||!user){document.body.classList.remove('connected');return;}
-  const {data:membership,error:memberError}=await supabaseClient
-    .from('household_members').select('household_id').eq('user_id',user.id).single();
-  if(memberError||!membership){
-    showAuthMessage('Ton compte ne semble pas encore rattaché au foyer. Contacte-nous avant de continuer.',true);
-    await supabaseClient.auth.signOut();return;
-  }
-  householdId=membership.household_id;
-  const {data:cloudRow,error:loadError}=await supabaseClient
-    .from('app_data').select('data').eq('household_id',householdId).maybeSingle();
-  if(loadError){showAuthMessage('Impossible de charger les données. Réessaie dans un instant.',true);return;}
-  if(cloudRow&&cloudRow.data){
-    const d=cloudRow.data;
-    stock=Array.isArray(d.stock)?d.stock:[];
-    shopping=Array.isArray(d.shopping)?d.shopping:[];
-    recipes=Array.isArray(d.recipes)?d.recipes:[];
-    plans=d.plans&&typeof d.plans==='object'?d.plans:{};
-    if(d.defaultPeople)localStorage.setItem('defaultPeople',JSON.stringify(d.defaultPeople));
+  try{
+    const {data:{user},error:authError}=await cloudTimeout(supabaseClient.auth.getUser(),'La vérification du compte');
+    if(authError||!user){document.body.classList.remove('connected');showAuthMessage('Session expirée. Recharge la page et reconnecte-toi.',true);return;}
+    const {data:membership,error:memberError}=await cloudTimeout(supabaseClient
+      .from('household_members').select('household_id').eq('user_id',user.id).single(),'Le chargement du foyer');
+    if(memberError||!membership){
+      showAuthMessage('Compte non rattaché au foyer. Ne supprime rien et contacte-nous.',true);
+      return;
+    }
+    householdId=membership.household_id;
+    const {data:cloudRow,error:loadError}=await cloudTimeout(supabaseClient
+      .from('app_data').select('data').eq('household_id',householdId).maybeSingle(),'Le chargement des données');
+    if(loadError){showAuthMessage('Impossible de charger les données : '+loadError.message,true);return;}
+    if(cloudRow&&cloudRow.data){
+      const d=cloudRow.data;
+      stock=Array.isArray(d.stock)?d.stock:[];
+      shopping=Array.isArray(d.shopping)?d.shopping:[];
+      recipes=Array.isArray(d.recipes)?d.recipes:[];
+      plans=d.plans&&typeof d.plans==='object'?d.plans:{};
+      if(d.defaultPeople)localStorage.setItem('defaultPeople',JSON.stringify(d.defaultPeople));
+      saveLocalCloudData();
+    }else{
+      await writeCloudData();
+    }
+    const recipeCountBeforeCleanup=recipes.length;
+    recipes=recipes.filter(r=>!r.regionalCollection);
+    const addedNoSugarRecipes=ensureNoAddedSugarRecipes();
     saveLocalCloudData();
-  }else{
-    await writeCloudData();
-  }
-  // Retire aussi de la base partagée les recettes régionales déjà enregistrées.
-  const recipeCountBeforeCleanup=recipes.length;
-  recipes=recipes.filter(r=>!r.regionalCollection);
-  const addedNoSugarRecipes=ensureNoAddedSugarRecipes();
-  saveLocalCloudData();
-  window.cloudReady=true;
-  if(recipes.length!==recipeCountBeforeCleanup||addedNoSugarRecipes) await writeCloudData();
-  document.body.classList.add('connected');
-  document.getElementById('auth-screen').style.display='none';
-  page('home');
-  showAuthMessage('');
-  const header=document.querySelector('header p');
-  if(header)header.textContent='Connecté · Cuisine partagée';
-  const old=document.getElementById('logout-button');
-  if(!old){
-    const b=document.createElement('button');b.id='logout-button';b.className='light';b.textContent='Se déconnecter';b.onclick=logoutFromApp;
-    document.querySelector('header').appendChild(b);
+    window.cloudReady=true;
+    if(recipes.length!==recipeCountBeforeCleanup||addedNoSugarRecipes) await writeCloudData();
+    document.body.classList.add('connected');
+    document.getElementById('auth-screen').style.display='none';
+    page('home');
+    showAuthMessage('');
+    const header=document.querySelector('header p');
+    if(header)header.textContent='Connecté · Cuisine partagée';
+    const old=document.getElementById('logout-button');
+    if(!old){
+      const b=document.createElement('button');b.id='logout-button';b.className='light';b.textContent='Se déconnecter';b.onclick=logoutFromApp;
+      document.querySelector('header').appendChild(b);
+    }
+  }catch(e){
+    console.error('Erreur chargement Notre Cuisine:',e);
+    document.body.classList.remove('connected');
+    showAuthMessage(e.message||'Chargement impossible. Vérifie ta connexion et réessaie.',true);
   }
 }
 function saveLocalCloudData(){
