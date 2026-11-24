@@ -97,7 +97,7 @@ let stock=get('stock',[]),shopping=get('shopping',[]),recipes=get('recipes',[]),
 let stockPlace='Placard',stockSearch='';
 const places=['Placard','Réfrigérateur','Congélateur'];
 const categories=['Entrée','Plat','Dessert','Biscuits maison','Biscuits sans sucre','Apéritif'];
-let recipeCategoryFilter='Toutes';
+let recipeCategoryFilter='Toutes'; let recipeRegionFilter='Toutes';
 
 // Disponible dès le premier script : les recettes sans sucre l'utilisent pendant leur initialisation.
 function normalized(s){return String(s||'').toLocaleLowerCase('fr').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
