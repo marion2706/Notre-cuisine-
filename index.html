@@ -548,7 +548,9 @@ function addRecipe(){
 }
 function showRecipe(i){
  const r=recipes[i];if(!r)return;const app=document.getElementById('app');
- app.innerHTML='<button class="light" onclick="page(\'recipes\')">← Retour aux recettes</button><div class="card">'+(r.photo?'<img src="'+esc(r.photo)+'" style="width:100%;max-height:230px;object-fit:cover;border-radius:12px">':'')+'<h2>'+esc(r.name)+'</h2><span class="pill">'+esc(r.category||'')+'</span>'+(r.region?'<span class="pill">'+esc(r.region)+'</span>':'')+'<p class="small">Pour '+(r.servings||3)+' personne(s) · Préparation : '+(r.prepTime||0)+' min · Cuisson : '+(r.cookTime||0)+' min</p><h3>Ingrédients</h3><p>'+esc(r.ingredients||'Non renseignés').replace(/\n/g,'<br>')+'</p><h3>Préparation</h3><p>'+esc(r.preparation||'Non renseignée').replace(/\n/g,'<br>')+'</p>'+(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">Consulter la recette originale</a>':'')+'<p><button onclick="addRecipeIngredients('+i+')">Ajouter les ingrédients aux courses</button><button class="light" onclick="editRecipe('+i+')">Modifier</button></p></div>';
+ const ingredientList=(r.ingredients||'Non renseignés').split(/\\r?\\n/).map(line=>line.trim()).filter(Boolean).map(line=>'<li>'+esc(line.replace(/^[-•]+\\s*/,''))+'</li>').join('');
+ const prepList=(r.preparation||'Non renseignée').split(/\\r?\\n/).map(line=>line.trim()).filter(Boolean).map(line=>'<li>'+esc(line.replace(/^\\d+[.)]\\s*/,''))+'</li>').join('');
+ app.innerHTML='<button class="light" onclick="page(\\'recipes\\')">← Retour aux recettes</button><div class="card">'+(r.photo?'<img src="'+esc(r.photo)+'" style="width:100%;max-height:230px;object-fit:cover;border-radius:12px">':'')+'<h2>'+esc(r.name)+'</h2><span class="pill">'+esc(r.category||'')+'</span>'+(r.region?'<span class="pill">'+esc(r.region)+'</span>':'')+'<p class="small">Pour '+(r.servings||3)+' personne(s) · Préparation : '+(r.prepTime||0)+' min · Cuisson : '+(r.cookTime||0)+' min</p><h3>Ingrédients</h3><ul style="padding-left:22px;line-height:1.8">'+ingredientList+'</ul><h3>Préparation</h3><ol style="padding-left:22px;line-height:1.8">'+prepList+'</ol>'+(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">Consulter la recette originale</a>':'')+'<p><button onclick="addRecipeIngredients('+i+')">Ajouter les ingrédients aux courses</button><button class="light" onclick="window.editRecipe('+i+')">Modifier</button></p></div>';
 }
 window.showRecipe=showRecipe;
 function toggleFavorite(i){recipes[i].favorite=!recipes[i].favorite;save('recipes',recipes);renderRecipes()}
@@ -571,7 +573,7 @@ async function saveEditedRecipe(){
  saveLocalCloudData();if(window.cloudReady)await writeCloudData();else save('recipes',recipes);
  editingRecipe=-1;renderRecipes();alert('Recette modifiée et enregistrée !');
 }
-window.editRecipe=editRecipe;
+window.editRecipe=editRecipe;window.saveEditedRecipe=saveEditedRecipe;
 function ingredientParts(line){
  const m=String(line).trim().match(/^([0-9]+(?:[.,][0-9]+)?(?:\s*\/\s*[0-9]+)?)\s*(kg|g|mg|l|cl|ml|piece|pieces|pce|pcs)?\s*(?:de|d’|d')?\s*(.+)$/i);
  if(!m)return {name:String(line).trim(),amount:null,unit:''};
