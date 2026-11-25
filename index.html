@@ -912,7 +912,7 @@ async function initializeCloudApp(){
     }
     const recipeCountBeforeCleanup=recipes.length;
     recipes=recipes.filter(r=>!r.regionalCollection);
-    const addedNoSugarRecipes=window.ensureNoAddedSugarRecipes();
+    const addedNoSugarRecipes=typeof window.ensureNoAddedSugarRecipes==='function'?window.ensureNoAddedSugarRecipes():false;
     saveLocalCloudData();
     window.cloudReady=true;
     if(recipes.length!==recipeCountBeforeCleanup||addedNoSugarRecipes) await writeCloudData();
