@@ -971,5 +971,33 @@ if(supabaseClient){
 }
 </script>
 
+
+<script>
+/* Gestion de connexion de secours avec affichage explicite des erreurs */
+window.loginToApp = async function(){
+  const button=document.getElementById('auth-login');
+  const message=document.getElementById('auth-message');
+  const show=(t)=>{if(message){message.textContent=t;message.style.color='#a33';}};
+  try{
+    if(typeof supabaseClient==='undefined'||!supabaseClient){
+      show('Le service de connexion ne s’est pas chargé. Ferme puis rouvre la page.');
+      return;
+    }
+    const email=document.getElementById('auth-email')?.value.trim();
+    const password=document.getElementById('auth-password')?.value;
+    if(!email||!password){show('Renseigne ton adresse e-mail et ton mot de passe.');return;}
+    if(button){button.disabled=true;button.textContent='Connexion…';}
+    if(message)message.textContent='Connexion en cours…';
+    const result=await supabaseClient.auth.signInWithPassword({email,password});
+    if(result.error)throw result.error;
+    await initializeCloudApp();
+  }catch(e){
+    console.error('Connexion Notre Cuisine:',e);
+    show('La connexion a échoué : '+(e?.message||String(e)));
+  }finally{
+    if(button){button.disabled=false;button.textContent='Se connecter';}
+  }
+};
+</script>
 </body>
 </html>
