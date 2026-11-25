@@ -655,7 +655,7 @@ function addWeeklyIngredients(){
 function addRecipeIngredients(i){
  const r=recipes[i];if(!r)return;let added=0;
  const servings=Number(window.recipeServingsChoice?.[i])||Number(r.servings)||3;
- recipeLinesForServings(r,servings).map(x=>x.trim()).filter(Boolean).forEach(line=>{const p=ingredientParts(line);if(!inventoryHas(p.name)&&!shopping.some(s=>normalized(s.name)===normalized(line)&&!s.done)){shopping.push({name:ingredientLineFormat(line),done:false});added++}});
+ recipeLinesForServings(r,servings).map(x=>x.trim()).filter(Boolean).forEach(line=>{const formatted=ingredientLineFormat(line),p=ingredientParts(formatted);if(!inventoryHas(p.name)&&!shopping.some(s=>normalized(s.name)===normalized(formatted)&&!s.done)){shopping.push({name:formatted,done:false});added++}});
  save('shopping',shopping);alert(added+' ingrédient(s) ajouté(s) pour '+servings+' personne(s)/portion(s).');page('shopping');
 }
 function renderMealEditor(key,slot,label,meal){
