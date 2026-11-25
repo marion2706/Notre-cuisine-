@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="Notre Cuisine">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Notre Cuisine</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src=\'https://unpkg.com/@supabase/supabase-js@2\'"></script>
 <style>
 :root{--green:#596344;--light:#eef0e7;--cream:#faf7ef;--brown:#806d52}
 *{box-sizing:border-box}
@@ -861,7 +861,7 @@ function mergePurchaseQuantity(oldValue,qty,pack){
 <script>
 const SUPABASE_URL = 'https://aoxvtdjezydcpcsbunzg.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_fFfcZg2HMDVhg48QO0e5YQ_vMYxS_EP';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const supabaseClient = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY) : null;
 window.cloudReady = false;
 let householdId = null;
 let cloudSaveTimer = null;
@@ -871,6 +871,7 @@ function showAuthMessage(message, isError=false){
   if(el){el.textContent=message;el.style.color=isError?'#a33':'#596344';}
 }
 async function loginToApp(){
+  if(!supabaseClient){showAuthMessage('Le service de connexion ne se charge pas. Vérifie ta connexion Internet puis actualise la page.',true);return;}
   const email=document.getElementById('auth-email').value.trim();
   const password=document.getElementById('auth-password').value;
   if(!email||!password){showAuthMessage('Renseigne ton adresse e-mail et ton mot de passe.',true);return;}
@@ -961,9 +962,13 @@ async function logoutFromApp(){
   const header=document.querySelector('header p');if(header)header.textContent='La cuisine de toute la famille';
   showAuthMessage('Tu es déconnectée.');
 }
-supabaseClient.auth.getSession().then(({data})=>{
-  if(data.session)initializeCloudApp();
-});
+if(supabaseClient){
+  supabaseClient.auth.getSession().then(({data})=>{
+    if(data.session)initializeCloudApp();
+  }).catch(e=>showAuthMessage('Impossible de vérifier la connexion : '+(e.message||e),true));
+}else{
+  showAuthMessage('Le service de connexion ne se charge pas. Actualise la page pour réessayer.',true);
+}
 </script>
 
 </body>
