@@ -134,12 +134,33 @@ function ensureNoAddedSugarRecipes(){
 
 
 window.ensureNoAddedSugarRecipes=ensureNoAddedSugarRecipes;
+function scaledIngredientLine(line,ratio){
+ const s=String(line||'').trim();
+ if(/^(rendement|pour|moule)\\s*:/i.test(s))return s;
+ const m=s.match(/^(.+?)\\s*:\\s*(.+)$/);
+ if(!m)return s;
+ const item=m[1].trim(),qty=m[2].trim();
+ const num=qty.match(/^([0-9]+(?:[.,][0-9]+)?)(.*)$/);
+ if(!num)return s;
+ const scaled=Number((Number(num[1].replace(',','.'))*ratio).toFixed(2));
+ return item+' : '+scaled.toString().replace('.',',')+num[2];
+}
+function recipeLinesForServings(r,servings){
+ const base=Math.max(1,Number(r.servings)||3),ratio=Math.max(1,Number(servings)||base)/base;
+ return String(r.ingredients||'Non renseignés').split(/\\r?\\n/).map(line=>scaledIngredientLine(line,ratio));
+}
+window.recipeServingsChoice={};
 function showRecipe(i){
  const r=recipes[i];if(!r)return;
  const app=document.getElementById('app');
- const ingredientList=String(r.ingredients||'Non renseignés').split(/\r?\n/).map(line=>line.trim()).filter(Boolean).map(line=>'<li>'+esc(ingredientLineFormat(line))+'</li>').join('');
- const prepList=String(r.preparation||'Non renseignée').split(/\r?\n/).map(line=>line.trim()).filter(Boolean).map(line=>'<li>'+esc(line.replace(/^\d+[.)]\s*/,''))+'</li>').join('');
- app.innerHTML='<button class="light" onclick="page(\'recipes\')">← Retour aux recettes</button><div class="card"><h2>'+esc(r.name)+'</h2><span class="pill">'+esc(r.category||'')+'</span><p class="small">Pour '+(r.servings||3)+' personne(s) · Préparation : '+(r.prepTime||0)+' min · Cuisson : '+(r.cookTime||0)+' min</p><h3>Ingrédients</h3><ul style="padding-left:22px;line-height:1.8">'+ingredientList+'</ul><h3>Préparation</h3><ol style="padding-left:22px;line-height:1.8">'+prepList+'</ol><p><button onclick="addRecipeIngredients('+i+')">Ajouter les ingrédients aux courses</button></p></div>';
+ const servings=Number(window.recipeServingsChoice[i])||Number(r.servings)||3;
+ const ingredientList=recipeLinesForServings(r,servings).map(line=>line.trim()).filter(Boolean).map(line=>'<li>'+esc(ingredientLineFormat(line))+'</li>').join('');
+ const prepList=String(r.preparation||'Non renseignée').split(/\\r?\\n/).map(line=>line.trim()).filter(Boolean).map(line=>'<li>'+esc(line.replace(/^\\d+[.)]\\s*/,''))+'</li>').join('');
+ app.innerHTML='<button class="light" onclick="page(\\'recipes\\')">← Retour aux recettes</button><div class="card"><h2>'+esc(r.name)+'</h2><span class="pill">'+esc(r.category||'')+'</span><p class="small">Préparation : '+(r.prepTime||0)+' min · Cuisson : '+(r.cookTime||0)+' min</p><label for="recipe-servings">Nombre de personnes / portions</label><input id="recipe-servings" type="number" min="1" max="30" value="'+servings+'" onchange="updateRecipeServings('+i+',this.value)"><p class="small">Quantités recalculées automatiquement à partir de la recette originale pour '+servings+' personne(s)/portion(s).</p><h3>Ingrédients</h3><ul id="scaled-ingredients" style="padding-left:22px;line-height:1.8">'+ingredientList+'</ul><h3>Préparation</h3><ol style="padding-left:22px;line-height:1.8">'+prepList+'</ol><p><button onclick="addRecipeIngredients('+i+')">Ajouter les ingrédients pour '+servings+' aux courses</button></p></div>';
+}
+function updateRecipeServings(i,value){
+ const servings=Math.max(1,Math.min(30,Number(value)||1));window.recipeServingsChoice[i]=servings;
+ showRecipe(i);
 }
 window.showRecipe=showRecipe;
 
@@ -633,8 +654,9 @@ function addWeeklyIngredients(){
 }
 function addRecipeIngredients(i){
  const r=recipes[i];if(!r)return;let added=0;
- (r.ingredients||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean).forEach(line=>{const p=ingredientParts(line);if(!inventoryHas(p.name)&&!shopping.some(s=>normalized(s.name)===normalized(line)&&!s.done)){shopping.push({name:line,done:false});added++}});
- save('shopping',shopping);alert(added+' ingrédient(s) ajouté(s).');page('shopping');
+ const servings=Number(window.recipeServingsChoice?.[i])||Number(r.servings)||3;
+ recipeLinesForServings(r,servings).map(x=>x.trim()).filter(Boolean).forEach(line=>{const p=ingredientParts(line);if(!inventoryHas(p.name)&&!shopping.some(s=>normalized(s.name)===normalized(line)&&!s.done)){shopping.push({name:ingredientLineFormat(line),done:false});added++}});
+ save('shopping',shopping);alert(added+' ingrédient(s) ajouté(s) pour '+servings+' personne(s)/portion(s).');page('shopping');
 }
 function renderMealEditor(key,slot,label,meal){
  const selectedExtras=Array.isArray(meal?.extraRecipeIndexes)?meal.extraRecipeIndexes:[];
